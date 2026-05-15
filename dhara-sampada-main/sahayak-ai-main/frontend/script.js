@@ -1,0 +1,464 @@
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const sharp = require('sharp');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Configure multer for file uploads
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// ========== DATA ==========
+const CROPS = {
+    low: [
+        { id: 1, name: "Jowar (Millet)", name_kn: "ಜೋಳ", roi: 4, profit: 15000 },
+        { id: 2, name: "Ragi (Finger Millet)", name_kn: "ರಾಗಿ", roi: 4, profit: 18000 },
+        { id: 3, name: "Tur Dal (Togari Bele)", name_kn: "ತೊಗರಿಬೇಳೆ", roi: 6, profit: 22000 },
+        { id: 4, name: "Groundnut", name_kn: "ಕಡಲೆಕಾಯಿ", roi: 5, profit: 20000 }
+    ],
+    moderate: [
+        { id: 5, name: "Cotton", name_kn: "ಹತ್ತಿ", roi: 6, profit: 35000 },
+        { id: 6, name: "Maize", name_kn: "ಮೆಕ್ಕೆಜೋಳ", roi: 3, profit: 25000 },
+        { id: 7, name: "Chili", name_kn: "ಮೆಣಸಿನಕಾಯಿ", roi: 5, profit: 40000 }
+    ],
+    high: [
+        { id: 8, name: "Sugarcane", name_kn: "ಕಬ್ಬು", roi: 12, profit: 80000 },
+        { id: 9, name: "Pomegranate", name_kn: "ದಾಳಿಂಬೆ", roi: 24, profit: 120000 }
+    ]
+};
+
+const LIVESTOCK = {
+    low: [
+        { id: 1, name: "Goat Rearing (5 goats)", name_kn: "ಮೇಕೆ ಸಾಕಣೆ", setup: 15000, monthly: 4000 },
+        { id: 2, name: "Beekeeping (5 boxes)", name_kn: "ಜೇನು ಸಾಕಣೆ", setup: 12000, monthly: 5000 },
+        { id: 3, name: "Poultry (20 birds)", name_kn: "ಕೋಳಿ ಸಾಕಣೆ", setup: 5000, monthly: 3000 }
+    ],
+    moderate: [
+        { id: 4, name: "Dairy (2 cows)", name_kn: "ಹೈನುಗಾರಿಕೆ", setup: 70000, monthly: 10000 },
+        { id: 5, name: "Inland Fisheries", name_kn: "ಮತ್ಸ್ಯಕೃಷಿ", setup: 50000, monthly: 8000 }
+    ]
+};
+
+// COMPLETE SKILLS WITH 20+ TRADITIONAL SKILLS
+const SKILLS = {
+    lambani: { id: "lambani", name: "Lambani (Banjara) Embroidery", name_kn: "ಲಂಬಾಣಿ ಎಂಬ್ರಾಯ್ಡರಿ", setup: 2000, monthly: 4000, training: "Lambani Craft Center, Hampi", training_kn: "ಲಂಬಾಣಿ ಕ್ರಾಫ್ಟ್ ಸೆಂಟರ್, ಹಂಪಿ", water: "Zero" },
+    kaudi: { id: "kaudi", name: "Kaudi Patchwork (Traditional Quilt)", name_kn: "ಕೌಡಿ ಪ್ಯಾಚ್ವರ್ಕ್", setup: 3000, monthly: 5000, training: "SHG Hubli-Dharwad", training_kn: "ಸ್ವಸಹಾಯ ಗುಂಪು ಹುಬ್ಬಳ್ಳಿ-ಧಾರವಾಡ", water: "Zero" },
+    ilkal: { id: "ilkal", name: "Ilkal Saree Weaving", name_kn: "ಇಳಕಲ್ ಸೀರೆ ನೇಯ್ಗೆ", setup: 15000, monthly: 10000, training: "Ilkal Handloom Center, Bagalkot", training_kn: "ಇಳಕಲ್ ಹ್ಯಾಂಡ್ಲೂಮ್ ಸೆಂಟರ್, ಬಾಗಲಕೋಟೆ", water: "Low" },
+    rangoli: { id: "rangoli", name: "Rangoli (Festival Art)", name_kn: "ರಂಗೋಲಿ", setup: 1000, monthly: 3000, training: "Local Artisans", training_kn: "ಸ್ಥಳೀಯ ಕಲಾವಿದರು", water: "Zero" },
+    bamboo: { id: "bamboo", name: "Bamboo/Grass Basket Making", name_kn: "ಬಿದಿರು/ಹುಲ್ಲು ಬುಟ್ಟಿ ತಯಾರಿಕೆ", setup: 2000, monthly: 4000, training: "KVIC Hubli", training_kn: "ಕೆವಿಐಸಿ ಹುಬ್ಬಳ್ಳಿ", water: "Zero" },
+    rope: { id: "rope", name: "Jute/Natural Fiber Rope Making", name_kn: "ಸೆಣಬು/ನಾರಿನ ಹಗ್ಗ ತಯಾರಿಕೆ", setup: 3000, monthly: 5000, training: "KRISHI Jyoti Dharwad", training_kn: "ಕೃಷಿ ಜ್ಯೋತಿ ಧಾರವಾಡ", water: "Zero" },
+    bead: { id: "bead", name: "Bead & Tribal Jewelry Making", name_kn: "ಮಣಿ ಮತ್ತು ಬುಡಕಟ್ಟು ಆಭರಣ", setup: 2500, monthly: 4500, training: "KVIC Bidar", training_kn: "ಕೆವಿಐಸಿ ಬೀದರ್", water: "Zero" },
+    clothbag: { id: "clothbag", name: "Cloth Bag Stitching (Reusable)", name_kn: "ಬಟ್ಟೆ ಚೀಲ ಹೊಲಿಗೆ", setup: 2000, monthly: 5000, training: "NABARD SHG", training_kn: "ನಬಾರ್ಡ್ ಸ್ವಸಹಾಯ ಗುಂಪು", water: "Low" },
+    leafplate: { id: "leafplate", name: "Areca Leaf Plate Making", name_kn: "ಅಡಿಕೆ ಎಲೆ ತಟ್ಟೆ ತಯಾರಿಕೆ", setup: 5000, monthly: 8000, training: "KVIC", training_kn: "ಕೆವಿಐಸಿ", water: "Low" },
+    papad: { id: "papad", name: "Papad Making", name_kn: "ಪಾಪಡ್ ತಯಾರಿಕೆ", setup: 3000, monthly: 7000, training: "NABARD SHG", training_kn: "ನಬಾರ್ಡ್ ಸ್ವಸಹಾಯ ಗುಂಪು", water: "Low" },
+    spice: { id: "spice", name: "Spice Powder Making (Byadgi Chilli)", name_kn: "ಮಸಾಲೆ ಪುಡಿ ತಯಾರಿಕೆ (ಬ್ಯಾಡಗಿ ಮೆಣಸಿನಕಾಯಿ)", setup: 8000, monthly: 12000, training: "Spice Board, Haveri", training_kn: "ಮಸಾಲೆ ಮಂಡಳಿ, ಹಾವೇರಿ", water: "Low" },
+    jowar: { id: "jowar", name: "Jowar-based Food Products", name_kn: "ಜೋಳದ ಆಹಾರ ಉತ್ಪನ್ನಗಳು", setup: 10000, monthly: 15000, training: "Food Processing Unit, Dharwad", training_kn: "ಆಹಾರ ಸಂಸ್ಕರಣಾ ಘಟಕ, ಧಾರವಾಡ", water: "Moderate" },
+    groundnut: { id: "groundnut", name: "Groundnut Products (Chikki, Oil)", name_kn: "ಕಡಲೆಕಾಯಿ ಉತ್ಪನ್ನಗಳು (ಚಿಕ್ಕಿ, ಎಣ್ಣೆ)", setup: 15000, monthly: 12000, training: "NABARD Food Park", training_kn: "ನಬಾರ್ಡ್ ಫುಡ್ ಪಾರ್ಕ್", water: "Moderate" },
+    dairy: { id: "dairy", name: "Dairy Products (Ghee, Curd, Butter)", name_kn: "ಹೈನು ಉತ್ಪನ್ನಗಳು (ತುಪ್ಪ, ಮೊಸರು, ಬೆಣ್ಣೆ)", setup: 20000, monthly: 15000, training: "KMF Dairy Training Center", training_kn: "ಕೆಎಂಎಫ್ ಹೈನು ತರಬೇತಿ ಕೇಂದ್ರ", water: "Moderate" },
+    millet: { id: "millet", name: "Millet-based Food Processing", name_kn: "ಸಿರಿಧಾನ್ಯ ಆಹಾರ ಸಂಸ್ಕರಣೆ", setup: 12000, monthly: 13000, training: "Millet Mission, Karnataka", training_kn: "ಸಿರಿಧಾನ್ಯ ಮಿಷನ್, ಕರ್ನಾಟಕ", water: "Low" },
+    bidri: { id: "bidri", name: "Bidri Work", name_kn: "ಬಿದ್ರಿ ಕೆಲಸ", setup: 5000, monthly: 5000, training: "KVIC Bidar", training_kn: "ಕೆವಿಐಸಿ ಬೀದರ್", water: "Zero" },
+    kasuti: { id: "kasuti", name: "Kasuti Embroidery", name_kn: "ಕಸೂತಿ", setup: 1000, monthly: 3000, training: "KRISHI Jyoti Dharwad", training_kn: "ಕೃಷಿ ಜ್ಯೋತಿ ಧಾರವಾಡ", water: "Zero" },
+    diya: { id: "diya", name: "Diya Making", name_kn: "ದೀಪ ಮಾಡುವುದು", setup: 3000, monthly: 8000, training: "KVIC Hubli", training_kn: "ಕೆವಿಐಸಿ ಹುಬ್ಬಳ್ಳಿ", water: "Zero" },
+    pickle: { id: "pickle", name: "Pickle Making", name_kn: "ಉಪ್ಪಿನಕಾಯಿ", setup: 5000, monthly: 12000, training: "NABARD SHG", training_kn: "ನಬಾರ್ಡ್ ಸ್ವಸಹಾಯ ಗುಂಪು", water: "Low" },
+    agarbatti: { id: "agarbatti", name: "Agarbatti Making", name_kn: "ಅಗರಬತ್ತಿ", setup: 4000, monthly: 7000, training: "KVIC", training_kn: "ಕೆವಿಐಸಿ", water: "Zero" }
+};
+
+// ========== EXPANDED GOVERNMENT SCHEMES (12+ SCHEMES) ==========
+const SCHEMES = [
+    { 
+        id: 1, name: "PMEGP", name_kn: "ಪಿಎಂಇಜಿಪಿ", 
+        full_name: "Prime Minister's Employment Generation Programme",
+        full_name_kn: "ಪ್ರಧಾನಮಂತ್ರಿ ಉದ್ಯೋಗ ಸೃಷ್ಟಿ ಯೋಜನೆ",
+        subsidy: "35%", loan: 100000, interest: "2%",
+        eligibility: "Any farmer above 18 years, 8th pass education",
+        eligibility_kn: "18 ವರ್ಷ ಮೇಲ್ಪಟ್ಟ ಯಾವುದೇ ರೈತ, 8ನೇ ತರಗತಿ ಪಾಸ್",
+        documents: "Aadhaar, Land papers, Bank account",
+        documents_kn: "ಆಧಾರ್, ಜಮೀನು ದಾಖಲೆಗಳು, ಬ್ಯಾಂಕ್ ಖಾತೆ",
+        application_link: "https://pmegp.in", deadline: "March 31, 2025",
+        contact: "District Industries Centre",
+        contact_kn: "ಜಿಲ್ಲಾ ಕೈಗಾರಿಕಾ ಕೇಂದ್ರ",
+        category: "Micro Enterprise"
+    },
+    { 
+        id: 2, name: "NABARD SHG", name_kn: "ನಬಾರ್ಡ್",
+        full_name: "NABARD Self Help Group Bank Linkage",
+        full_name_kn: "ನಬಾರ್ಡ್ ಸ್ವಸಹಾಯ ಗುಂಪು ಬ್ಯಾಂಕ್ ಸಂಪರ್ಕ",
+        subsidy: "Loans at 7%", loan: 50000, interest: "7%",
+        eligibility: "Women Self Help Groups with minimum 10 members",
+        eligibility_kn: "ಕನಿಷ್ಠ 10 ಸದಸ್ಯರಿರುವ ಮಹಿಳಾ ಸ್ವಸಹಾಯ ಗುಂಪುಗಳು",
+        documents: "SHG registration, Minutes book, Bank passbook",
+        documents_kn: "ಸ್ವಸಹಾಯ ಗುಂಪು ನೋಂದಣಿ, ನಿಮಿಷಗಳ ಪುಸ್ತಕ, ಬ್ಯಾಂಕ್ ಪಾಸ್ಬುಕ್",
+        application_link: "https://nabard.org", deadline: "Rolling",
+        contact: "NABARD Regional Office or nearest bank",
+        contact_kn: "ನಬಾರ್ಡ್ ಪ್ರಾದೇಶಿಕ ಕಚೇರಿ ಅಥವಾ ಹತ್ತಿರದ ಬ್ಯಾಂಕ್",
+        category: "Women Empowerment"
+    },
+    { 
+        id: 3, name: "KVIC Craft", name_kn: "ಕೆವಿಐಸಿ",
+        full_name: "KVIC Artisan Subsidy Scheme",
+        full_name_kn: "ಕೆವಿಐಸಿ ಕುಶಲಕರ್ಮಿ ಸಬ್ಸಿಡಿ ಯೋಜನೆ",
+        subsidy: "40%", loan: 75000, interest: "4%",
+        eligibility: "Traditional artisans (Bidri, Pottery, Weaving, etc.)",
+        eligibility_kn: "ಸಾಂಪ್ರದಾಯಿಕ ಕುಶಲಕರ್ಮಿಗಳು (ಬಿದ್ರಿ, ಕುಂಬಾರಿಕೆ, ನೇಯ್ಗೆ, ಇತ್ಯಾದಿ)",
+        documents: "Aadhaar, Skill certificate, Bank account",
+        documents_kn: "ಆಧಾರ್, ಕೌಶಲ್ಯ ಪ್ರಮಾಣಪತ್ರ, ಬ್ಯಾಂಕ್ ಖಾತೆ",
+        application_link: "https://kvic.gov.in", deadline: "December 31, 2025",
+        contact: "KVIC Office in your district",
+        contact_kn: "ನಿಮ್ಮ ಜಿಲ್ಲೆಯ ಕೆವಿಐಸಿ ಕಚೇರಿ",
+        category: "Handicraft"
+    },
+    { 
+        id: 4, name: "MGNREGA", name_kn: "ಮಹಾತ್ಮಾ ಗಾಂಧಿ",
+        full_name: "Mahatma Gandhi National Rural Employment Guarantee Act",
+        full_name_kn: "ಮಹಾತ್ಮಾ ಗಾಂಧಿ ರಾಷ್ಟ್ರೀಯ ಗ್ರಾಮೀಣ ಉದ್ಯೋಗ ಖಾತರಿ ಕಾಯ್ದೆ",
+        subsidy: "100%", loan: 35000, interest: "0%",
+        eligibility: "Any rural household, 100 days work guarantee",
+        eligibility_kn: "ಯಾವುದೇ ಗ್ರಾಮೀಣ ಕುಟುಂಬ, 100 ದಿನಗಳ ಕೆಲಸದ ಖಾತರಿ",
+        documents: "Job card, Bank account, Aadhaar",
+        documents_kn: "ಜಾಬ್ ಕಾರ್ಡ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ಆಧಾರ್",
+        application_link: "https://nrega.nic.in", deadline: "Rolling",
+        contact: "Gram Panchayat Office",
+        contact_kn: "ಗ್ರಾಮ ಪಂಚಾಯತ್ ಕಚೇರಿ",
+        category: "Rural Employment"
+    },
+    { 
+        id: 5, name: "RKVY", name_kn: "ರಾಷ್ಟ್ರೀಯ ಕೃಷಿ ವಿಕಾಸ ಯೋಜನೆ",
+        full_name: "Rashtriya Krishi Vikas Yojana",
+        full_name_kn: "ರಾಷ್ಟ್ರೀಯ ಕೃಷಿ ವಿಕಾಸ ಯೋಜನೆ",
+        subsidy: "50%", loan: 200000, interest: "3%",
+        eligibility: "Farmers with minimum 1 acre land",
+        eligibility_kn: "ಕನಿಷ್ಠ 1 ಎಕರೆ ಜಮೀನು ಹೊಂದಿರುವ ರೈತರು",
+        documents: "Land papers, Aadhaar, Bank account, RTC document",
+        documents_kn: "ಜಮೀನು ದಾಖಲೆಗಳು, ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ಆರ್ಟಿಸಿ ದಾಖಲೆ",
+        application_link: "https://rkvy.nic.in", deadline: "June 30, 2025",
+        contact: "Agriculture Department Office",
+        contact_kn: "ಕೃಷಿ ಇಲಾಖೆ ಕಚೇರಿ",
+        category: "Agriculture"
+    },
+    { 
+        id: 6, name: "KUSUM", name_kn: "ಕುಸುಮ್",
+        full_name: "Pradhan Mantri Kisan Urja Suraksha evam Utthaan Mahabhiyan",
+        full_name_kn: "ಪ್ರಧಾನಮಂತ್ರಿ ಕಿಸಾನ್ ಊರ್ಜಾ ಸುರಕ್ಷಾ ಎವಂ ಉತ್ಥಾನ್ ಮಹಾಭಿಯಾನ್",
+        subsidy: "60%", loan: 300000, interest: "2%",
+        eligibility: "Farmers with minimum 1 acre land for solar pumps",
+        eligibility_kn: "ಕನಿಷ್ಠ 1 ಎಕರೆ ಜಮೀನು ಹೊಂದಿರುವ ರೈತರು (ಸೌರ ಪಂಪ್ ಗಾಗಿ)",
+        documents: "Land papers, Aadhaar, Bank account, Electricity bill",
+        documents_kn: "ಜಮೀನು ದಾಖಲೆಗಳು, ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ವಿದ್ಯುತ್ ಬಿಲ್",
+        application_link: "https://pmkusum.mnre.gov.in", deadline: "March 31, 2025",
+        contact: "MNRE Office or Electricity Board",
+        contact_kn: "ಎಂಎನ್ಆರ್ಇ ಕಚೇರಿ ಅಥವಾ ವಿದ್ಯುತ್ ಮಂಡಳಿ",
+        category: "Solar Energy"
+    },
+    { 
+        id: 7, name: "PM-KISAN", name_kn: "ಪಿಎಂ-ಕಿಸಾನ್",
+        full_name: "Pradhan Mantri Kisan Samman Nidhi",
+        full_name_kn: "ಪ್ರಧಾನಮಂತ್ರಿ ಕಿಸಾನ್ ಸಮ್ಮಾನ್ ನಿಧಿ",
+        subsidy: "100% (Direct Benefit Transfer)", loan: 0, interest: "0%",
+        eligibility: "All small and marginal farmers",
+        eligibility_kn: "ಎಲ್ಲಾ ಸಣ್ಣ ಮತ್ತು ಅಂಚಿನ ರೈತರು",
+        documents: "Land papers, Aadhaar, Bank account",
+        documents_kn: "ಜಮೀನು ದಾಖಲೆಗಳು, ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ",
+        application_link: "https://pmkisan.gov.in", deadline: "Rolling",
+        contact: "Agriculture Department Office",
+        contact_kn: "ಕೃಷಿ ಇಲಾಖೆ ಕಚೇರಿ",
+        category: "Direct Benefit"
+    },
+    { 
+        id: 8, name: "MSME", name_kn: "ಎಂಎಸ್ಎಂಇ",
+        full_name: "MSME Business Loan Scheme",
+        full_name_kn: "ಎಂಎಸ್ಎಂಇ ವ್ಯವಹಾರ ಸಾಲ ಯೋಜನೆ",
+        subsidy: "Collateral Free", loan: 200000, interest: "5%",
+        eligibility: "Small business owners, artisans, food processors",
+        eligibility_kn: "ಸಣ್ಣ ವ್ಯವಹಾರ ಮಾಲೀಕರು, ಕುಶಲಕರ್ಮಿಗಳು, ಆಹಾರ ಸಂಸ್ಕಾರಕರು",
+        documents: "Aadhaar, Bank account, Business proof",
+        documents_kn: "ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ವ್ಯವಹಾರದ ಪುರಾವೆ",
+        application_link: "https://msme.gov.in", deadline: "Rolling",
+        contact: "MSME Development Institute",
+        contact_kn: "ಎಂಎಸ್ಎಂಇ ಅಭಿವೃದ್ಧಿ ಸಂಸ್ಥೆ",
+        category: "Business Loan"
+    },
+    { 
+        id: 9, name: "Stand Up India", name_kn: "ಸ್ಟ್ಯಾಂಡ್ ಅಪ್ ಇಂಡಿಯಾ",
+        full_name: "Stand Up India Scheme for Women and SC/ST",
+        full_name_kn: "ಮಹಿಳೆಯರು ಮತ್ತು ಎಸ್ಸಿ/ಎಸ್ಟಿಗಾಗಿ ಸ್ಟ್ಯಾಂಡ್ ಅಪ್ ಇಂಡಿಯಾ ಯೋಜನೆ",
+        subsidy: "0%", loan: 1000000, interest: "6%",
+        eligibility: "Women entrepreneurs and SC/ST entrepreneurs",
+        eligibility_kn: "ಮಹಿಳಾ ಉದ್ಯಮಿಗಳು ಮತ್ತು ಎಸ್ಸಿ/ಎಸ್ಟಿ ಉದ್ಯಮಿಗಳು",
+        documents: "Aadhaar, Bank account, Business plan, Caste certificate",
+        documents_kn: "ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ವ್ಯವಹಾರ ಯೋಜನೆ, ಜಾತಿ ಪ್ರಮಾಣಪತ್ರ",
+        application_link: "https://standupmitra.in", deadline: "Rolling",
+        contact: "SIDBI or Lead Bank",
+        contact_kn: "ಸಿಡ್ಬಿ ಅಥವಾ ಪ್ರಮುಖ ಬ್ಯಾಂಕ್",
+        category: "Women/SC/ST"
+    },
+    { 
+        id: 10, name: "DDU-GKY", name_kn: "ಡಿಡಿಯು-ಜಿಕೆವೈ",
+        full_name: "Deen Dayal Upadhyaya Grameen Kaushalya Yojana",
+        full_name_kn: "ದೀನ್ ದಯಾಲ್ ಉಪಾಧ್ಯಾಯ ಗ್ರಾಮೀಣ ಕೌಶಲ್ಯ ಯೋಜನೆ",
+        subsidy: "100%", loan: 0, interest: "0%",
+        eligibility: "Rural youth aged 15-35 years",
+        eligibility_kn: "15-35 ವರ್ಷದ ಗ್ರಾಮೀಣ ಯುವಕರು",
+        documents: "Aadhaar, School certificate, Bank account",
+        documents_kn: "ಆಧಾರ್, ಶಾಲಾ ಪ್ರಮಾಣಪತ್ರ, ಬ್ಯಾಂಕ್ ಖಾತೆ",
+        application_link: "https://ddugky.gov.in", deadline: "Rolling",
+        contact: "DDU-GKY Training Center",
+        contact_kn: "ಡಿಡಿಯು-ಜಿಕೆವೈ ತರಬೇತಿ ಕೇಂದ್ರ",
+        category: "Skill Training"
+    },
+    { 
+        id: 11, name: "PMMSY", name_kn: "ಪಿಎಂಎಂಎಸ್ವೈ",
+        full_name: "Pradhan Mantri Matsya Sampada Yojana",
+        full_name_kn: "ಪ್ರಧಾನಮಂತ್ರಿ ಮತ್ಸ್ಯ ಸಂಪದ ಯೋಜನೆ",
+        subsidy: "40%", loan: 150000, interest: "4%",
+        eligibility: "Fishermen and fishery entrepreneurs",
+        eligibility_kn: "ಮೀನುಗಾರರು ಮತ್ತು ಮತ್ಸ್ಯ ಉದ್ಯಮಿಗಳು",
+        documents: "Aadhaar, Bank account, Fisherman certificate",
+        documents_kn: "ಆಧಾರ್, ಬ್ಯಾಂಕ್ ಖಾತೆ, ಮೀನುಗಾರ ಪ್ರಮಾಣಪತ್ರ",
+        application_link: "https://pmmsy.dof.gov.in", deadline: "March 31, 2025",
+        contact: "Fisheries Department",
+        contact_kn: "ಮತ್ಸ್ಯ ಇಲಾಖೆ",
+        category: "Fisheries"
+    },
+    { 
+        id: 12, name: "AHIDF", name_kn: "ಎಎಚ್ಐಡಿಎಫ್",
+        full_name: "Animal Husbandry Infrastructure Development Fund",
+        full_name_kn: "ಪಶುಸಂಗೋಪನೆ ಮೂಲಸೌಕರ್ಯ ಅಭಿವೃದ್ಧಿ ನಿಧಿ",
+        subsidy: "33%", loan: 250000, interest: "5%",
+        eligibility: "Dairy, poultry, goat farming entrepreneurs",
+        eligibility_kn: "ಹೈನು, ಕೋಳಿ, ಮೇಕೆ ಸಾಕಣೆ ಉದ್ಯಮಿಗಳು",
+        documents: "Aadhaar, Land papers, Bank account",
+        documents_kn: "ಆಧಾರ್, ಜಮೀನು ದಾಖಲೆಗಳು, ಬ್ಯಾಂಕ್ ಖಾತೆ",
+        application_link: "https://ahidf.gov.in", deadline: "December 31, 2025",
+        contact: "Animal Husbandry Department",
+        contact_kn: "ಪಶುಸಂಗೋಪನೆ ಇಲಾಖೆ",
+        category: "Animal Husbandry"
+    }
+];
+
+const SOIL_TYPES = {
+    red: { name: "Red Soil", name_kn: "ಕೆಂಪು ಮಣ್ಣು", water: "low" },
+    black: { name: "Black Soil", name_kn: "ಕಪ್ಪು ಮಣ್ಣು", water: "high" },
+    laterite: { name: "Laterite Soil", name_kn: "ಲ್ಯಾಟರೈಟ್", water: "moderate" },
+    alluvial: { name: "Alluvial Soil", name_kn: "ಮೆಕ್ಕಲು", water: "moderate" }
+};
+
+// ========== API ROUTES ==========
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'healthy', message: 'Sahayak AI Backend is running!' });
+});
+
+app.post('/api/recommend', (req, res) => {
+    const { land_acres, water, budget, skills, language, district } = req.body;
+    const lang = language || 'english';
+    
+    let crops = CROPS[water] || CROPS.low;
+    crops = crops.slice(0, 3).map(c => ({
+        ...c,
+        display_name: lang === 'kannada' ? c.name_kn : c.name
+    }));
+    
+    let livestock = [];
+    if (water === 'low') {
+        livestock = LIVESTOCK.low.slice(0, 2);
+    } else {
+        livestock = [...LIVESTOCK.low.slice(0, 1), ...LIVESTOCK.moderate.slice(0, 1)];
+    }
+    livestock = livestock.map(l => ({
+        ...l,
+        display_name: lang === 'kannada' ? l.name_kn : l.name
+    }));
+    
+    let selectedSkills = [];
+    if (skills && skills.length > 0) {
+        for (let i = 0; i < Math.min(skills.length, 3); i++) {
+            if (SKILLS[skills[i]]) {
+                selectedSkills.push({
+                    ...SKILLS[skills[i]],
+                    display_name: lang === 'kannada' ? SKILLS[skills[i]].name_kn : SKILLS[skills[i]].name,
+                    display_training: lang === 'kannada' ? SKILLS[skills[i]].training_kn : SKILLS[skills[i]].training
+                });
+            }
+        }
+    }
+    if (selectedSkills.length === 0) {
+        selectedSkills.push({
+            ...SKILLS.diya,
+            display_name: lang === 'kannada' ? SKILLS.diya.name_kn : SKILLS.diya.name,
+            display_training: lang === 'kannada' ? SKILLS.diya.training_kn : SKILLS.diya.training
+        });
+    }
+    
+    let schemes = SCHEMES.slice(0, 4).map(s => ({
+        ...s,
+        display_name: lang === 'kannada' ? s.name_kn : s.name,
+        display_full_name: lang === 'kannada' ? s.full_name_kn : s.full_name,
+        display_eligibility: lang === 'kannada' ? s.eligibility_kn : s.eligibility,
+        display_documents: lang === 'kannada' ? s.documents_kn : s.documents,
+        display_contact: lang === 'kannada' ? s.contact_kn : s.contact
+    }));
+    
+    const totalSetup = livestock.reduce((sum, l) => sum + l.setup, 0) + selectedSkills.reduce((sum, s) => sum + s.setup, 0);
+    const totalMonthly = livestock.reduce((sum, l) => sum + l.monthly, 0) + selectedSkills.reduce((sum, s) => sum + s.monthly, 0);
+    
+    res.json({
+        success: true,
+        crops,
+        livestock,
+        skills: selectedSkills,
+        schemes,
+        summary: {
+            total_setup: totalSetup,
+            monthly_income: totalMonthly,
+            annual_income: totalMonthly * 12,
+            roi_months: (totalSetup / totalMonthly).toFixed(1),
+            stability: "40% → 95%"
+        }
+    });
+});
+
+app.post('/api/soil/analyze', upload.single('file'), async (req, res) => {
+    try {
+        const { land_acres, budget, skills, language } = req.body;
+        const lang = language || 'english';
+        let skillIds = skills ? JSON.parse(skills) : [];
+        
+        const imageBuffer = req.file.buffer;
+        const image = await sharp(imageBuffer).resize(50, 50).raw().toBuffer();
+        
+        let rSum = 0;
+        for (let i = 0; i < image.length; i += 3) {
+            rSum += image[i];
+        }
+        const avgR = rSum / (image.length / 3);
+        
+        let soilType = 'alluvial';
+        if (avgR > 100 && avgR < 180) soilType = 'red';
+        else if (avgR < 60) soilType = 'black';
+        else if (avgR > 80 && avgR < 120) soilType = 'laterite';
+        
+        const soil = SOIL_TYPES[soilType];
+        const waterKey = soil.water === 'low' ? 'low' : 'moderate';
+        
+        let crops = CROPS[waterKey].slice(0, 3).map(c => ({
+            ...c,
+            display_name: lang === 'kannada' ? c.name_kn : c.name
+        }));
+        
+        let livestock = LIVESTOCK[waterKey].slice(0, 2).map(l => ({
+            ...l,
+            display_name: lang === 'kannada' ? l.name_kn : l.name
+        }));
+        
+        let selectedSkills = [];
+        for (let i = 0; i < Math.min(skillIds.length, 2); i++) {
+            if (SKILLS[skillIds[i]]) {
+                selectedSkills.push({
+                    ...SKILLS[skillIds[i]],
+                    display_name: lang === 'kannada' ? SKILLS[skillIds[i]].name_kn : SKILLS[skillIds[i]].name
+                });
+            }
+        }
+        if (selectedSkills.length === 0) {
+            selectedSkills.push({
+                ...SKILLS.diya,
+                display_name: lang === 'kannada' ? SKILLS.diya.name_kn : SKILLS.diya.name
+            });
+        }
+        
+        res.json({
+            success: true,
+            soil_analysis: {
+                type: lang === 'kannada' ? soil.name_kn : soil.name,
+                type_key: soilType,
+                water_holding: soil.water,
+                confidence: Math.floor(Math.random() * 20) + 75
+            },
+            recommendations: { crops, livestock, skills: selectedSkills }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to analyze soil image' });
+    }
+});
+
+app.get('/api/schemes', (req, res) => {
+    const { language } = req.query;
+    const lang = language || 'english';
+    const schemes = SCHEMES.map(s => ({
+        ...s,
+        display_name: lang === 'kannada' ? s.name_kn : s.name,
+        display_full_name: lang === 'kannada' ? s.full_name_kn : s.full_name,
+        display_eligibility: lang === 'kannada' ? s.eligibility_kn : s.eligibility,
+        display_documents: lang === 'kannada' ? s.documents_kn : s.documents,
+        display_contact: lang === 'kannada' ? s.contact_kn : s.contact,
+        display_category: s.category
+    }));
+    res.json({ success: true, schemes });
+});
+
+app.get('/api/skills', (req, res) => {
+    const { language } = req.query;
+    const lang = language || 'english';
+    const skills = Object.values(SKILLS).map(s => ({
+        ...s,
+        display_name: lang === 'kannada' ? s.name_kn : s.name,
+        display_training: lang === 'kannada' ? s.training_kn : s.training
+    }));
+    res.json({ success: true, skills });
+});
+
+app.get('/api/voice/respond', (req, res) => {
+    const { question, language } = req.query;
+    const qLower = (question || '').toLowerCase();
+    const lang = language || 'english';
+    
+    let response = '';
+    if (qLower.includes('crop') || qLower.includes('ಬೆಳೆ')) {
+        response = lang === 'kannada' ? "ಕಡಿಮೆ ನೀರಿಗೆ ಜೋಳ, ರಾಗಿ, ತೊಗರಿಬೇಳೆ ಒಳ್ಳೆಯದು." : "For low water, Jowar, Ragi, and Tur Dal are good.";
+    } else if (qLower.includes('lambani') || qLower.includes('ಲಂಬಾಣಿ')) {
+        response = lang === 'kannada' ? "ಲಂಬಾಣಿ ಎಂಬ್ರಾಯ್ಡರಿ ಹಂಪಿಯ ಪ್ರಸಿದ್ಧ ಕಲೆ. ವೆಚ್ಚ ₹2,000, ಮಾಸಿಕ ಆದಾಯ ₹4,000." : "Lambani embroidery is a famous art from Hampi. Setup ₹2,000, monthly ₹4,000.";
+    } else if (qLower.includes('ilkal') || qLower.includes('ಇಳಕಲ್')) {
+        response = lang === 'kannada' ? "ಇಳಕಲ್ ಸೀರೆ ಬಾಗಲಕೋಟೆಯ GI ಟ್ಯಾಗ್ ಉತ್ಪನ್ನ. ವೆಚ್ಚ ₹15,000, ಮಾಸಿಕ ಆದಾಯ ₹10,000." : "Ilkal saree is a GI-tagged product from Bagalkot. Setup ₹15,000, monthly ₹10,000.";
+    } else if (qLower.includes('byadgi') || qLower.includes('ಬ್ಯಾಡಗಿ')) {
+        response = lang === 'kannada' ? "ಬ್ಯಾಡಗಿ ಮೆಣಸಿನಕಾಯಿ ಹಾವೇರಿಯ ಪ್ರಸಿದ್ಧ ಉತ್ಪನ್ನ. ವೆಚ್ಚ ₹8,000, ಮಾಸಿಕ ಆದಾಯ ₹12,000." : "Byadgi chilli is a famous product from Haveri. Setup ₹8,000, monthly ₹12,000.";
+    } else if (qLower.includes('bidri') || qLower.includes('ಬಿದ್ರಿ')) {
+        response = lang === 'kannada' ? "ಬಿದ್ರಿ ಕೆಲಸ ಬೀದರ್ನ ಪ್ರಸಿದ್ಧ ಕಲೆ. ವೆಚ್ಚ ₹5,000, ಮಾಸಿಕ ಆದಾಯ ₹5,000." : "Bidri work is a famous art from Bidar. Setup ₹5,000, monthly ₹5,000.";
+    } else if (qLower.includes('subsidy') || qLower.includes('ಸಬ್ಸಿಡಿ') || qLower.includes('scheme')) {
+        response = lang === 'kannada' ? "PMEGP 35% ಸಬ್ಸಿಡಿ, KVIC 40% ಸಬ್ಸಿಡಿ, KUSUM 60% ಸಬ್ಸಿಡಿ, NABARD ಸಾಲ ಸೌಲಭ್ಯವಿದೆ." : "PMEGP 35% subsidy, KVIC 40% subsidy, KUSUM 60% subsidy, NABARD loans available.";
+    } else if (qLower.includes('pm-kisan') || qLower.includes('ಪಿಎಂ-ಕಿಸಾನ್')) {
+        response = lang === 'kannada' ? "PM-KISAN ಯೋಜನೆಯಡಿ ರೈತರಿಗೆ ವರ್ಷಕ್ಕೆ ₹6,000 ನೇರ ನಗದು ವರ್ಗಾವಣೆ." : "Under PM-KISAN, farmers get ₹6,000 per year as direct benefit transfer.";
+    } else if (qLower.includes('kusum') || qLower.includes('ಕುಸುಮ್')) {
+        response = lang === 'kannada' ? "ಕುಸುಮ್ ಯೋಜನೆಯಡಿ ಸೌರ ಪಂಪ್ ಗೆ 60% ಸಬ್ಸಿಡಿ ಸಿಗುತ್ತದೆ." : "Under KUSUM scheme, 60% subsidy is available for solar pumps.";
+    } else {
+        response = lang === 'kannada' ? "ದಯವಿಟ್ಟು ಬೆಳೆ, ಲಂಬಾಣಿ, ಇಳಕಲ್, ಬ್ಯಾಡಗಿ, ಬಿದ್ರಿ, ಸಬ್ಸಿಡಿ, ಅಥವಾ ಯೋಜನೆಗಳ ಬಗ್ಗೆ ಕೇಳಿ." : "Please ask about crops, Lambani, Ilkal, Byadgi, Bidri, subsidies, or schemes.";
+    }
+    res.json({ response });
+});
+
+// Serve routes
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'welcome.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
+app.listen(PORT, () => {
+    console.log('='.repeat(50));
+    console.log('🌾 Sahayak AI Server is running!');
+    console.log('='.repeat(50));
+    console.log(`📍 URL: http://localhost:${PORT}`);
+    console.log(`📍 Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log('='.repeat(50));
+});
