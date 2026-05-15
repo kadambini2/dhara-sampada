@@ -16,15 +16,21 @@ st.set_page_config(
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# ================= LOGIN PAGE =================
+if "users" not in st.session_state:
+    st.session_state.users = {
+        "admin": "1234"
+    }
 
-def login_page():
+# ================= AUTH PAGE =================
+
+def auth_page():
 
     st.markdown(
         """
         <h1 style='text-align:center;color:green;'>
         🌾 DHARA SAMPADA
         </h1>
+
         <h3 style='text-align:center;'>
         AI Powered Smart Agriculture Platform
         </h3>
@@ -39,20 +45,79 @@ def login_page():
 
     st.markdown("---")
 
-    username = st.text_input("👤 Username")
-    password = st.text_input("🔒 Password", type="password")
+    auth_option = st.radio(
+        "Select Option",
+        ["🔐 Login", "📝 Sign Up"]
+    )
 
-    if st.button("🚀 Login"):
+    # ================= LOGIN =================
 
-        if username == "admin" and password == "1234":
+    if auth_option == "🔐 Login":
 
-            st.session_state.logged_in = True
-            st.success("✅ Login Successful")
-            time.sleep(1)
-            st.rerun()
+        username = st.text_input("👤 Username")
+        password = st.text_input("🔒 Password", type="password")
 
-        else:
-            st.error("❌ Invalid Username or Password")
+        if st.button("🚀 Login"):
+
+            if username in st.session_state.users:
+
+                if st.session_state.users[username] == password:
+
+                    st.session_state.logged_in = True
+                    st.success("✅ Login Successful")
+
+                    time.sleep(1)
+
+                    st.rerun()
+
+                else:
+                    st.error("❌ Incorrect Password")
+
+            else:
+                st.error("❌ User Not Found")
+
+    # ================= SIGNUP =================
+
+    else:
+
+        st.subheader("📝 Create New Account")
+
+        new_user = st.text_input("👤 Create Username")
+        new_pass = st.text_input(
+            "🔒 Create Password",
+            type="password"
+        )
+
+        confirm_pass = st.text_input(
+            "🔒 Confirm Password",
+            type="password"
+        )
+
+        if st.button("✅ Sign Up"):
+
+            if new_user == "" or new_pass == "":
+
+                st.warning("⚠ Please Fill All Fields")
+
+            elif new_user in st.session_state.users:
+
+                st.error("❌ Username Already Exists")
+
+            elif new_pass != confirm_pass:
+
+                st.error("❌ Passwords Do Not Match")
+
+            else:
+
+                st.session_state.users[new_user] = new_pass
+
+                st.success(
+                    "✅ Account Created Successfully"
+                )
+
+                st.info(
+                    "Now Login Using Your Credentials"
+                )
 
 # ================= MAIN APP =================
 
@@ -61,6 +126,13 @@ def main_app():
     # ================= SIDEBAR =================
 
     st.sidebar.title("🌾 Dhara Sampada")
+
+    st.sidebar.success("✅ Logged In")
+
+    if st.sidebar.button("🚪 Logout"):
+
+        st.session_state.logged_in = False
+        st.rerun()
 
     menu = st.sidebar.radio(
         "📌 Navigation",
@@ -336,29 +408,17 @@ def main_app():
 
             st.success("🌾 ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ")
 
-            st.write("✅ ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ")
-            st.write("✅ ಬೆಳೆ ಸಲಹೆ")
-            st.write("✅ ಮಾರುಕಟ್ಟೆ ಬೆಲೆ")
-
         elif language == "Hindi":
 
             st.success("🌾 धारा संपदा में आपका स्वागत है")
 
-            st.write("✅ मौसम पूर्वानुमान")
-            st.write("✅ फसल सलाह")
-            st.write("✅ बाजार मूल्य")
-
         else:
 
             st.success("🌾 Welcome to Dhara Sampada")
-
-            st.write("✅ Weather Forecast")
-            st.write("✅ Crop Advisory")
-            st.write("✅ Market Prices")
 
 # ================= APP CONTROL =================
 
 if st.session_state.logged_in:
     main_app()
 else:
-    login_page()
+    auth_page()
