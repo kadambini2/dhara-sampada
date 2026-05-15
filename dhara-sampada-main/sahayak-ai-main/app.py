@@ -428,18 +428,163 @@ def main_app():
 
     elif menu == "🌱 Soil Health":
 
-        st.title("🌱 Soil Health Checker")
+        st.title("🌱 Advanced Soil Analysis")
 
-        ph = st.slider("Soil pH", 1.0, 14.0, 7.0)
+        st.info("Analyze soil nutrients and get smart crop & fertilizer recommendations.")
 
-        if ph < 6:
-            st.warning("⚠ Soil is Acidic")
+        ph = st.slider("🧪 Soil pH", 1.0, 14.0, 7.0)
 
-        elif ph > 8:
-            st.warning("⚠ Soil is Alkaline")
+        nitrogen = st.slider("🌿 Nitrogen (N)", 0, 100, 50)
 
-        else:
-            st.success("✅ Soil Health is Good")
+        phosphorus = st.slider("🧬 Phosphorus (P)", 0, 100, 50)
+
+        potassium = st.slider("⚡ Potassium (K)", 0, 100, 50)
+
+        moisture = st.slider("💧 Soil Moisture (%)", 0, 100, 50)
+
+        if st.button("🔍 Analyze Soil"):
+
+            st.subheader("📊 Soil Health Report")
+
+            if ph < 6:
+
+                st.warning("⚠ Soil is Acidic")
+                st.write("✅ Add lime to balance soil pH")
+
+            elif ph > 8:
+
+                st.warning("⚠ Soil is Alkaline")
+                st.write("✅ Add organic compost or gypsum")
+
+            else:
+
+                st.success("✅ Soil pH is Ideal")
+
+            st.subheader("🧪 Nutrient Analysis")
+
+            if nitrogen < 40:
+                st.error("⚠ Nitrogen is Low")
+            else:
+                st.success("✅ Nitrogen Level is Good")
+
+            if phosphorus < 40:
+                st.error("⚠ Phosphorus is Low")
+            else:
+                st.success("✅ Phosphorus Level is Good")
+
+            if potassium < 40:
+                st.error("⚠ Potassium is Low")
+            else:
+                st.success("✅ Potassium Level is Good")
+
+            if moisture < 30:
+
+                st.warning("⚠ Soil Moisture is Low")
+                st.write("💧 Irrigation Recommended")
+
+            else:
+
+                st.success("✅ Soil Moisture is Sufficient")
+
+            st.subheader("🌾 Recommended Crops")
+
+            recommended_crops = []
+
+            if ph >= 6 and ph <= 7.5:
+
+                if moisture > 50:
+                    recommended_crops.extend(
+                        ["Paddy", "Sugarcane"]
+                    )
+
+                else:
+                    recommended_crops.extend(
+                        ["Wheat", "Maize"]
+                    )
+
+            elif ph < 6:
+
+                recommended_crops.extend(
+                    ["Potato", "Tea", "Groundnut"]
+                )
+
+            else:
+
+                recommended_crops.extend(
+                    ["Cotton", "Barley", "Ragi"]
+                )
+
+            for crop in recommended_crops:
+                st.success(f"✅ {crop}")
+
+            st.subheader("🧴 Fertilizer Recommendations")
+
+            fertilizers = []
+
+            if nitrogen < 40:
+                fertilizers.append("Urea")
+
+            if phosphorus < 40:
+                fertilizers.append("DAP")
+
+            if potassium < 40:
+                fertilizers.append("MOP (Muriate of Potash)")
+
+            if len(fertilizers) == 0:
+
+                st.success(
+                    "✅ No Major Fertilizer Needed"
+                )
+
+            else:
+
+                for fert in fertilizers:
+                    st.info(f"🌱 Recommended: {fert}")
+
+            st.subheader("📋 Soil Summary")
+
+            soil_data = {
+                "Parameter": [
+                    "pH",
+                    "Nitrogen",
+                    "Phosphorus",
+                    "Potassium",
+                    "Moisture"
+                ],
+
+                "Value": [
+                    ph,
+                    nitrogen,
+                    phosphorus,
+                    potassium,
+                    f"{moisture}%"
+                ]
+            }
+
+            soil_df = pd.DataFrame(soil_data)
+
+            st.dataframe(
+                soil_df,
+                use_container_width=True
+            )
+
+            st.subheader("🏆 Overall Soil Health Score")
+
+            score = (
+                nitrogen +
+                phosphorus +
+                potassium +
+                moisture
+            ) / 4
+
+            if score >= 75:
+                st.success(f"🌟 Excellent Soil Health ({score:.1f}%)")
+
+            elif score >= 50:
+                st.warning(f"⚠ Moderate Soil Health ({score:.1f}%)")
+
+            else:
+                st.error(f"❌ Poor Soil Health ({score:.1f}%)")
 
     # ================= FARM CALCULATOR =================
 
