@@ -83,6 +83,7 @@ def auth_page():
         st.subheader("📝 Create New Account")
 
         new_user = st.text_input("👤 Create Username")
+
         new_pass = st.text_input(
             "🔒 Create Password",
             type="password"
@@ -196,9 +197,11 @@ def main_app():
 
         st.title("🌦 Live Weather Forecast")
 
-        city = st.text_input("Enter City", "Bangalore")
+        st.info("Get real-time weather updates, rainfall alerts, humidity, and farming suggestions.")
 
-        if st.button("Get Weather"):
+        city = st.text_input("🏙 Enter City Name", "Bangalore")
+
+        if st.button("🌦 Get Weather Report"):
 
             api_key = "YOUR_OPENWEATHER_API_KEY"
 
@@ -210,30 +213,111 @@ def main_app():
 
                 data = response.json()
 
-                col1, col2, col3, col4 = st.columns(4)
+                temperature = data['main']['temp']
+                humidity = data['main']['humidity']
+                weather_condition = data['weather'][0]['description']
+                wind_speed = data['wind']['speed']
+                pressure = data['main']['pressure']
+
+                col1, col2, col3 = st.columns(3)
 
                 col1.metric(
                     "🌡 Temperature",
-                    f"{data['main']['temp']} °C"
+                    f"{temperature} °C"
                 )
 
                 col2.metric(
                     "💧 Humidity",
-                    f"{data['main']['humidity']} %"
+                    f"{humidity}%"
                 )
 
                 col3.metric(
-                    "☁ Condition",
-                    data['weather'][0]['description']
+                    "💨 Wind Speed",
+                    f"{wind_speed} m/s"
                 )
 
+                col4, col5 = st.columns(2)
+
                 col4.metric(
-                    "💨 Wind Speed",
-                    f"{data['wind']['speed']} m/s"
+                    "☁ Condition",
+                    weather_condition.title()
+                )
+
+                col5.metric(
+                    "📊 Pressure",
+                    f"{pressure} hPa"
+                )
+
+                st.markdown("---")
+
+                st.subheader("🚨 Smart Weather Alerts")
+
+                if temperature > 38:
+                    st.error("⚠ High Temperature Alert!")
+
+                elif temperature < 15:
+                    st.warning("⚠ Cold Weather Alert!")
+
+                else:
+                    st.success("✅ Weather Conditions are Normal")
+
+                if humidity > 85:
+                    st.warning("⚠ High Humidity may cause fungal diseases.")
+
+                st.subheader("🌾 Farming Suggestions")
+
+                if "rain" in weather_condition.lower():
+
+                    st.success("✅ Good time for sowing crops")
+
+                    st.write("🌱 Recommended Crops:")
+                    st.write("- Paddy")
+                    st.write("- Sugarcane")
+                    st.write("- Cotton")
+
+                elif temperature > 35:
+
+                    st.warning("⚠ Use drip irrigation to save water")
+
+                    st.write("🌱 Heat Resistant Crops:")
+                    st.write("- Jowar")
+                    st.write("- Bajra")
+                    st.write("- Ragi")
+
+                else:
+
+                    st.success("✅ Suitable weather for farming")
+
+                st.subheader("📋 Weather Summary")
+
+                weather_df = {
+                    "Parameter": [
+                        "Temperature",
+                        "Humidity",
+                        "Condition",
+                        "Wind Speed",
+                        "Pressure"
+                    ],
+
+                    "Value": [
+                        f"{temperature} °C",
+                        f"{humidity}%",
+                        weather_condition,
+                        f"{wind_speed} m/s",
+                        f"{pressure} hPa"
+                    ]
+                }
+
+                df = pd.DataFrame(weather_df)
+
+                st.dataframe(
+                    df,
+                    use_container_width=True
                 )
 
             else:
-                st.error("Weather data not found")
+
+                st.error("❌ Unable to Fetch Weather Data")
 
     # ================= WEATHER ALERTS =================
 
