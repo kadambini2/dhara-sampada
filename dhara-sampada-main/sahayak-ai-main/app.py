@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 import time
-import yagmail
 
 # ================= PAGE CONFIG =================
 
@@ -11,13 +10,6 @@ st.set_page_config(
     page_icon="🌾",
     layout="wide"
 )
-
-# ================= API & EMAIL CONFIG =================
-
-OPENWEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"
-
-SENDER_EMAIL = "YOUR_GMAIL@gmail.com"
-SENDER_APP_PASSWORD = "YOUR_GMAIL_APP_PASSWORD"
 
 # ================= SESSION =================
 
@@ -28,30 +20,6 @@ if "users" not in st.session_state:
     st.session_state.users = {
         "admin": "1234"
     }
-
-# ================= EMAIL FUNCTION =================
-
-def send_email_alert(subject, message, receiver_email):
-
-    try:
-
-        yag = yagmail.SMTP(
-            user=SENDER_EMAIL,
-            password=SENDER_APP_PASSWORD
-        )
-
-        yag.send(
-            to=receiver_email,
-            subject=subject,
-            contents=message
-        )
-
-        return True
-
-    except Exception as e:
-
-        st.error(f"Email Error: {e}")
-        return False
 
 # ================= AUTH PAGE =================
 
@@ -87,11 +55,7 @@ def auth_page():
     if auth_option == "🔐 Login":
 
         username = st.text_input("👤 Username")
-
-        password = st.text_input(
-            "🔒 Password",
-            type="password"
-        )
+        password = st.text_input("🔒 Password", type="password")
 
         if st.button("🚀 Login"):
 
@@ -100,7 +64,6 @@ def auth_page():
                 if st.session_state.users[username] == password:
 
                     st.session_state.logged_in = True
-
                     st.success("✅ Login Successful")
 
                     time.sleep(1)
@@ -108,11 +71,9 @@ def auth_page():
                     st.rerun()
 
                 else:
-
                     st.error("❌ Incorrect Password")
 
             else:
-
                 st.error("❌ User Not Found")
 
     # ================= SIGNUP =================
@@ -162,6 +123,8 @@ def auth_page():
 # ================= MAIN APP =================
 
 def main_app():
+
+    # ================= SIDEBAR =================
 
     st.sidebar.title("🌾 Dhara Sampada")
 
@@ -223,24 +186,26 @@ def main_app():
             st.success("🚜 Farm Expense Calculator")
             st.success("🌐 Multilingual Support")
 
-    # ================= WEATHER FORECAST =================
+        st.image(
+            "https://images.unsplash.com/photo-1464226184884-fa280b87c399",
+            use_container_width=True
+        )
+
+    # ================= WEATHER =================
 
     elif menu == "🌦 Weather Forecast":
 
         st.title("🌦 Live Weather Forecast")
 
-        city = st.text_input(
-            "🏙 Enter City Name",
-            "Bangalore"
-        )
+        st.info("Get real-time weather updates, rainfall alerts, humidity, and farming suggestions.")
 
-        email = st.text_input(
-            "📧 Enter Gmail Address"
-        )
+        city = st.text_input("🏙 Enter City Name", "Bangalore")
 
         if st.button("🌦 Get Weather Report"):
 
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
+            api_key = "YOUR_OPENWEATHER_API_KEY"
+
+            url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
 
             response = requests.get(url)
 
@@ -253,13 +218,6 @@ def main_app():
                 weather_condition = data['weather'][0]['description']
                 wind_speed = data['wind']['speed']
                 pressure = data['main']['pressure']
-
-                rainfall = data.get(
-                    'rain',
-                    {}
-                ).get('1h', 0)
-
-                # ================= METRICS =================
 
                 col1, col2, col3 = st.columns(3)
 
@@ -274,11 +232,11 @@ def main_app():
                 )
 
                 col3.metric(
-                    "🌧 Rainfall",
-                    f"{rainfall} mm"
+                    "💨 Wind Speed",
+                    f"{wind_speed} m/s"
                 )
 
-                col4, col5, col6 = st.columns(3)
+                col4, col5 = st.columns(2)
 
                 col4.metric(
                     "☁ Condition",
@@ -286,69 +244,59 @@ def main_app():
                 )
 
                 col5.metric(
-                    "💨 Wind Speed",
-                    f"{wind_speed} m/s"
-                )
-
-                col6.metric(
                     "📊 Pressure",
                     f"{pressure} hPa"
                 )
 
                 st.markdown("---")
 
-                # ================= ALERTS =================
-
                 st.subheader("🚨 Smart Weather Alerts")
 
                 if temperature > 38:
-                    st.error("⚠ High Temperature Alert")
+                    st.error("⚠ High Temperature Alert!")
 
                 elif temperature < 15:
-                    st.warning("⚠ Cold Weather Alert")
+                    st.warning("⚠ Cold Weather Alert!")
 
                 else:
-                    st.success("✅ Weather Conditions Normal")
+                    st.success("✅ Weather Conditions are Normal")
 
                 if humidity > 85:
-                    st.warning("⚠ High Humidity may damage crops")
-
-                if rainfall > 20:
-                    st.error("⚠ Heavy Rainfall Alert")
-
-                # ================= FARMING SUGGESTIONS =================
+                    st.warning("⚠ High Humidity may cause fungal diseases.")
 
                 st.subheader("🌾 Farming Suggestions")
 
-                if rainfall > 20:
+                if "rain" in weather_condition.lower():
 
-                    st.warning("⚠ Avoid fertilizer spraying")
+                    st.success("✅ Good time for sowing crops")
 
-                    st.info("🌱 Protect crops from heavy rain")
+                    st.write("🌱 Recommended Crops:")
+                    st.write("- Paddy")
+                    st.write("- Sugarcane")
+                    st.write("- Cotton")
 
                 elif temperature > 35:
 
-                    st.warning("⚠ Use drip irrigation")
+                    st.warning("⚠ Use drip irrigation to save water")
 
-                    st.info("🌱 Grow heat-resistant crops")
+                    st.write("🌱 Heat Resistant Crops:")
+                    st.write("- Jowar")
+                    st.write("- Bajra")
+                    st.write("- Ragi")
 
                 else:
 
-                    st.success("✅ Suitable Weather for Farming")
-
-                # ================= WEATHER SUMMARY =================
+                    st.success("✅ Suitable weather for farming")
 
                 st.subheader("📋 Weather Summary")
 
-                weather_df = pd.DataFrame({
-
+                weather_df = {
                     "Parameter": [
                         "Temperature",
                         "Humidity",
                         "Condition",
                         "Wind Speed",
-                        "Pressure",
-                        "Rainfall"
+                        "Pressure"
                     ],
 
                     "Value": [
@@ -356,48 +304,16 @@ def main_app():
                         f"{humidity}%",
                         weather_condition,
                         f"{wind_speed} m/s",
-                        f"{pressure} hPa",
-                        f"{rainfall} mm"
+                        f"{pressure} hPa"
                     ]
-                })
+                }
+
+                df = pd.DataFrame(weather_df)
 
                 st.dataframe(
-                    weather_df,
+                    df,
                     use_container_width=True
                 )
-
-                # ================= EMAIL ALERT =================
-
-                alert_message = f"""
-🌾 Dhara Sampada Weather Alert
-
-City: {city}
-
-Temperature: {temperature}°C
-Humidity: {humidity}%
-Condition: {weather_condition}
-Wind Speed: {wind_speed} m/s
-Pressure: {pressure} hPa
-Rainfall: {rainfall} mm
-
-Stay Safe & Plan Farming Accordingly.
-"""
-
-                if st.button("📧 Send Weather Alert"):
-
-                    if email.strip() != "":
-
-                        email_sent = send_email_alert(
-                            "Dhara Sampada Weather Alert",
-                            alert_message,
-                            email
-                        )
-
-                        if email_sent:
-                            st.success("✅ Email Alert Sent")
-
-                    else:
-                        st.warning("⚠ Please Enter Email Address")
 
             else:
 
@@ -409,11 +325,7 @@ Stay Safe & Plan Farming Accordingly.
 
         st.title("🚨 Smart Weather Alerts")
 
-        rainfall = st.slider(
-            "Rainfall Level",
-            0,
-            100
-        )
+        rainfall = st.slider("Rainfall Level", 0, 100)
 
         if rainfall > 70:
             st.error("⚠ Heavy Rain Alert")
@@ -440,16 +352,23 @@ Stay Safe & Plan Farming Accordingly.
             ["Low", "Moderate", "High"]
         )
 
+        season = st.selectbox(
+            "Season",
+            ["Summer", "Winter", "Monsoon"]
+        )
+
         if st.button("Recommend Crops"):
 
-            if soil == "Black":
-                crops = ["Jowar", "Ragi"]
+            crops = []
+
+            if soil == "Black" and water == "Low":
+                crops = ["Jowar", "Ragi", "Tur Dal"]
 
             elif soil == "Red":
                 crops = ["Groundnut", "Cotton"]
 
             else:
-                crops = ["Sugarcane"]
+                crops = ["Sugarcane", "Pomegranate"]
 
             st.success("🌱 Recommended Crops")
 
@@ -460,80 +379,218 @@ Stay Safe & Plan Farming Accordingly.
 
     elif menu == "📈 Market Prices":
 
-        st.title("📈 Market Prices")
+        st.title("📈 Live Market Price Dashboard")
 
-        df = pd.DataFrame({
+        data = {
+            "Crop": ["Jowar", "Ragi", "Cotton", "Tur Dal"],
+            "Price": [3200, 4500, 7600, 8900]
+        }
 
-            "Crop": [
-                "Jowar",
-                "Ragi",
-                "Cotton"
-            ],
+        df = pd.DataFrame(data)
 
-            "Price": [
-                3200,
-                4500,
-                7600
-            ]
-        })
+        st.dataframe(df, use_container_width=True)
 
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
-
-        st.bar_chart(
-            df.set_index("Crop")
-        )
+        st.bar_chart(df.set_index("Crop"))
 
     # ================= GOVERNMENT SCHEMES =================
 
     elif menu == "🏛 Government Schemes":
 
-        st.title("🏛 Government Schemes")
+        st.title("🏛 Government Schemes Awareness")
 
-        st.info("✅ PM-KISAN → ₹6000 Support")
-        st.info("✅ KUSUM → Solar Subsidy")
-        st.info("✅ NABARD → Agriculture Funding")
+        schemes = {
+            "PM-KISAN": "₹6000 Support Per Year",
+            "KUSUM": "Solar Pump Subsidy",
+            "PMEGP": "Business Loan Support",
+            "NABARD": "Agriculture Funding"
+        }
+
+        for scheme, details in schemes.items():
+            st.info(f"✅ {scheme} → {details}")
 
     # ================= MARKETPLACE =================
 
     elif menu == "🛒 Farmer Marketplace":
 
-        st.title("🛒 Farmer Marketplace")
+        st.title("🛒 Farmer to Buyer Connectivity")
 
+        farmer = st.text_input("Farmer Name")
         product = st.text_input("Product Name")
+        quantity = st.number_input("Quantity", min_value=1)
 
         if st.button("Add Product"):
-            st.success(f"✅ {product} Added Successfully")
+
+            st.success(
+                f"✅ {product} Added Successfully"
+            )
 
     # ================= SOIL HEALTH =================
 
     elif menu == "🌱 Soil Health":
 
-        st.title("🌱 Soil Health")
+        st.title("🌱 Advanced Soil Analysis")
 
-        ph = st.slider(
-            "🧪 Soil pH",
-            1.0,
-            14.0,
-            7.0
-        )
+        st.info("Analyze soil nutrients and get smart crop & fertilizer recommendations.")
 
-        if ph < 6:
-            st.warning("⚠ Soil is Acidic")
+        ph = st.slider("🧪 Soil pH", 1.0, 14.0, 7.0)
 
-        elif ph > 8:
-            st.warning("⚠ Soil is Alkaline")
+        nitrogen = st.slider("🌿 Nitrogen (N)", 0, 100, 50)
 
-        else:
-            st.success("✅ Soil Health is Good")
+        phosphorus = st.slider("🧬 Phosphorus (P)", 0, 100, 50)
+
+        potassium = st.slider("⚡ Potassium (K)", 0, 100, 50)
+
+        moisture = st.slider("💧 Soil Moisture (%)", 0, 100, 50)
+
+        if st.button("🔍 Analyze Soil"):
+
+            st.subheader("📊 Soil Health Report")
+
+            if ph < 6:
+
+                st.warning("⚠ Soil is Acidic")
+                st.write("✅ Add lime to balance soil pH")
+
+            elif ph > 8:
+
+                st.warning("⚠ Soil is Alkaline")
+                st.write("✅ Add organic compost or gypsum")
+
+            else:
+
+                st.success("✅ Soil pH is Ideal")
+
+            st.subheader("🧪 Nutrient Analysis")
+
+            if nitrogen < 40:
+                st.error("⚠ Nitrogen is Low")
+            else:
+                st.success("✅ Nitrogen Level is Good")
+
+            if phosphorus < 40:
+                st.error("⚠ Phosphorus is Low")
+            else:
+                st.success("✅ Phosphorus Level is Good")
+
+            if potassium < 40:
+                st.error("⚠ Potassium is Low")
+            else:
+                st.success("✅ Potassium Level is Good")
+
+            if moisture < 30:
+
+                st.warning("⚠ Soil Moisture is Low")
+                st.write("💧 Irrigation Recommended")
+
+            else:
+
+                st.success("✅ Soil Moisture is Sufficient")
+
+            st.subheader("🌾 Recommended Crops")
+
+            recommended_crops = []
+
+            if ph >= 6 and ph <= 7.5:
+
+                if moisture > 50:
+                    recommended_crops.extend(
+                        ["Paddy", "Sugarcane"]
+                    )
+
+                else:
+                    recommended_crops.extend(
+                        ["Wheat", "Maize"]
+                    )
+
+            elif ph < 6:
+
+                recommended_crops.extend(
+                    ["Potato", "Tea", "Groundnut"]
+                )
+
+            else:
+
+                recommended_crops.extend(
+                    ["Cotton", "Barley", "Ragi"]
+                )
+
+            for crop in recommended_crops:
+                st.success(f"✅ {crop}")
+
+            st.subheader("🧴 Fertilizer Recommendations")
+
+            fertilizers = []
+
+            if nitrogen < 40:
+                fertilizers.append("Urea")
+
+            if phosphorus < 40:
+                fertilizers.append("DAP")
+
+            if potassium < 40:
+                fertilizers.append("MOP (Muriate of Potash)")
+
+            if len(fertilizers) == 0:
+
+                st.success(
+                    "✅ No Major Fertilizer Needed"
+                )
+
+            else:
+
+                for fert in fertilizers:
+                    st.info(f"🌱 Recommended: {fert}")
+
+            st.subheader("📋 Soil Summary")
+
+            soil_data = {
+                "Parameter": [
+                    "pH",
+                    "Nitrogen",
+                    "Phosphorus",
+                    "Potassium",
+                    "Moisture"
+                ],
+
+                "Value": [
+                    ph,
+                    nitrogen,
+                    phosphorus,
+                    potassium,
+                    f"{moisture}%"
+                ]
+            }
+
+            soil_df = pd.DataFrame(soil_data)
+
+            st.dataframe(
+                soil_df,
+                use_container_width=True
+            )
+
+            st.subheader("🏆 Overall Soil Health Score")
+
+            score = (
+                nitrogen +
+                phosphorus +
+                potassium +
+                moisture
+            ) / 4
+
+            if score >= 75:
+                st.success(f"🌟 Excellent Soil Health ({score:.1f}%)")
+
+            elif score >= 50:
+                st.warning(f"⚠ Moderate Soil Health ({score:.1f}%)")
+
+            else:
+                st.error(f"❌ Poor Soil Health ({score:.1f}%)")
 
     # ================= FARM CALCULATOR =================
 
     elif menu == "🚜 Farm Calculator":
 
-        st.title("🚜 Farm Calculator")
+        st.title("🚜 Farm Expense Calculator")
 
         seeds = st.number_input("Seed Cost", 0)
         fertilizer = st.number_input("Fertilizer Cost", 0)
@@ -555,10 +612,11 @@ Stay Safe & Plan Farming Accordingly.
         st.title("📚 Daily Farming Tips")
 
         tips = [
-            "🌱 Use drip irrigation",
-            "🌾 Rotate crops",
-            "🐄 Use organic manure",
-            "☀ Monitor weather before irrigation"
+            "🌱 Use drip irrigation to save water",
+            "🌾 Rotate crops for better soil fertility",
+            "🐄 Organic manure improves yield",
+            "☀ Monitor weather before irrigation",
+            "🚜 Test soil before sowing"
         ]
 
         for tip in tips:
@@ -576,12 +634,15 @@ Stay Safe & Plan Farming Accordingly.
         )
 
         if language == "Kannada":
+
             st.success("🌾 ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ")
 
         elif language == "Hindi":
+
             st.success("🌾 धारा संपदा में आपका स्वागत है")
 
         else:
+
             st.success("🌾 Welcome to Dhara Sampada")
 
 # ================= APP CONTROL =================
@@ -589,5 +650,9 @@ Stay Safe & Plan Farming Accordingly.
 if st.session_state.logged_in:
     main_app()
 else:
-    auth_page()
+    auth_page() 
+    
 
+            
+
+       
