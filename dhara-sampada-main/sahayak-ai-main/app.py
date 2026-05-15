@@ -13,6 +13,17 @@ st.set_page_config(
     layout="wide"
 )
 
+# ================= API & ALERT CONFIG =================
+
+OPENWEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"
+
+TWILIO_ACCOUNT_SID = "YOUR_TWILIO_ACCOUNT_SID"
+TWILIO_AUTH_TOKEN = "YOUR_TWILIO_AUTH_TOKEN"
+TWILIO_PHONE_NUMBER = "YOUR_TWILIO_PHONE_NUMBER"
+
+SENDER_EMAIL = "YOUR_GMAIL@gmail.com"
+SENDER_APP_PASSWORD = "YOUR_GMAIL_APP_PASSWORD"
+
 # ================= SESSION =================
 
 if "logged_in" not in st.session_state:
@@ -23,20 +34,20 @@ if "users" not in st.session_state:
         "admin": "1234"
     }
 
-# ================= SMS ALERT FUNCTION =================
+# ================= SMS FUNCTION =================
 
 def send_sms_alert(message, phone_number):
 
-    account_sid = "YOUR_TWILIO_ACCOUNT_SID"
-    auth_token = "YOUR_TWILIO_AUTH_TOKEN"
-
     try:
 
-        client = Client(account_sid, auth_token)
+        client = Client(
+            TWILIO_ACCOUNT_SID,
+            TWILIO_AUTH_TOKEN
+        )
 
         client.messages.create(
             body=message,
-            from_="YOUR_TWILIO_PHONE_NUMBER",
+            from_=TWILIO_PHONE_NUMBER,
             to=phone_number
         )
 
@@ -47,19 +58,15 @@ def send_sms_alert(message, phone_number):
         st.error(f"SMS Error: {e}")
         return False
 
-# ================= EMAIL ALERT FUNCTION =================
+# ================= EMAIL FUNCTION =================
 
 def send_email_alert(subject, message, receiver_email):
-
-    sender_email = "YOUR_GMAIL@gmail.com"
-
-    app_password = "YOUR_GMAIL_APP_PASSWORD"
 
     try:
 
         yag = yagmail.SMTP(
-            user=sender_email,
-            password=app_password
+            user=SENDER_EMAIL,
+            password=SENDER_APP_PASSWORD
         )
 
         yag.send(
@@ -109,7 +116,11 @@ def auth_page():
     if auth_option == "🔐 Login":
 
         username = st.text_input("👤 Username")
-        password = st.text_input("🔒 Password", type="password")
+
+        password = st.text_input(
+            "🔒 Password",
+            type="password"
+        )
 
         if st.button("🚀 Login"):
 
@@ -118,6 +129,7 @@ def auth_page():
                 if st.session_state.users[username] == password:
 
                     st.session_state.logged_in = True
+
                     st.success("✅ Login Successful")
 
                     time.sleep(1)
@@ -125,9 +137,11 @@ def auth_page():
                     st.rerun()
 
                 else:
+
                     st.error("❌ Incorrect Password")
 
             else:
+
                 st.error("❌ User Not Found")
 
     # ================= SIGNUP =================
@@ -177,8 +191,6 @@ def auth_page():
 # ================= MAIN APP =================
 
 def main_app():
-
-    # ================= SIDEBAR =================
 
     st.sidebar.title("🌾 Dhara Sampada")
 
@@ -240,20 +252,20 @@ def main_app():
             st.success("🚜 Farm Expense Calculator")
             st.success("🌐 Multilingual Support")
 
-        st.image(
-            "https://images.unsplash.com/photo-1464226184884-fa280b87c399",
-            use_container_width=True
-        )
-
-    # ================= WEATHER =================
+    # ================= WEATHER FORECAST =================
 
     elif menu == "🌦 Weather Forecast":
 
         st.title("🌦 Live Weather Forecast")
 
-        st.info("Get real-time weather updates, rainfall alerts, humidity, and farming suggestions.")
+        st.info(
+            "Get real-time weather updates and alerts."
+        )
 
-        city = st.text_input("🏙 Enter City Name", "Bangalore")
+        city = st.text_input(
+            "🏙 Enter City Name",
+            "Bangalore"
+        )
 
         phone_number = st.text_input(
             "📱 Enter Mobile Number with Country Code",
@@ -266,9 +278,7 @@ def main_app():
 
         if st.button("🌦 Get Weather Report"):
 
-            api_key = "YOUR_OPENWEATHER_API_KEY"
-
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+            url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
 
             response = requests.get(url)
 
@@ -282,7 +292,12 @@ def main_app():
                 wind_speed = data['wind']['speed']
                 pressure = data['main']['pressure']
 
-                rainfall = data.get('rain', {}).get('1h', 0)
+                rainfall = data.get(
+                    'rain',
+                    {}
+                ).get('1h', 0)
+
+                # ================= METRICS =================
 
                 col1, col2, col3 = st.columns(3)
 
@@ -297,8 +312,8 @@ def main_app():
                 )
 
                 col3.metric(
-                    "💨 Wind Speed",
-                    f"{wind_speed} m/s"
+                    "🌧 Rainfall",
+                    f"{rainfall} mm"
                 )
 
                 col4, col5, col6 = st.columns(3)
@@ -309,98 +324,79 @@ def main_app():
                 )
 
                 col5.metric(
+                    "💨 Wind Speed",
+                    f"{wind_speed} m/s"
+                )
+
+                col6.metric(
                     "📊 Pressure",
                     f"{pressure} hPa"
                 )
 
-                col6.metric(
-                    "🌧 Rainfall",
-                    f"{rainfall} mm"
-                )
-
                 st.markdown("---")
+
+                # ================= ALERTS =================
 
                 st.subheader("🚨 Smart Weather Alerts")
 
-                alert_message = f"""
-Weather Alert for {city}
-
-Temperature: {temperature}°C
-Humidity: {humidity}%
-Condition: {weather_condition}
-Rainfall: {rainfall} mm
-
-Stay Safe & Plan Farming Activities Accordingly.
-
-- Dhara Sampada
-"""
-
                 if temperature > 38:
-                    st.error("⚠ High Temperature Alert!")
+
+                    st.error("⚠ High Temperature Alert")
 
                 elif temperature < 15:
-                    st.warning("⚠ Cold Weather Alert!")
+
+                    st.warning("⚠ Cold Weather Alert")
 
                 else:
-                    st.success("✅ Weather Conditions are Normal")
+
+                    st.success("✅ Weather Conditions Normal")
 
                 if humidity > 85:
-                    st.warning("⚠ High Humidity may cause fungal diseases.")
+
+                    st.warning(
+                        "⚠ High Humidity may damage crops"
+                    )
 
                 if rainfall > 20:
 
-                    st.error("⚠ Heavy Rainfall Alert!")
+                    st.error("⚠ Heavy Rainfall Alert")
 
-                    rain_msg = f"""
-⚠ Heavy Rain Alert in {city}
-
-Rainfall Level: {rainfall} mm
-
-Protect crops and avoid fertilizer spraying.
-
-- Dhara Sampada
-"""
-
-                    if phone_number != "+91":
-                        send_sms_alert(
-                            rain_msg,
-                            phone_number
-                        )
-
-                    if email != "":
-                        send_email_alert(
-                            "Heavy Rainfall Alert",
-                            rain_msg,
-                            email
-                        )
+                # ================= FARMING SUGGESTIONS =================
 
                 st.subheader("🌾 Farming Suggestions")
 
-                if "rain" in weather_condition.lower():
+                if rainfall > 20:
 
-                    st.success("✅ Good time for sowing crops")
+                    st.warning(
+                        "⚠ Avoid fertilizer spraying"
+                    )
 
-                    st.write("🌱 Recommended Crops:")
-                    st.write("- Paddy")
-                    st.write("- Sugarcane")
-                    st.write("- Cotton")
+                    st.info(
+                        "🌱 Protect crops from heavy rain"
+                    )
 
                 elif temperature > 35:
 
-                    st.warning("⚠ Use drip irrigation to save water")
+                    st.warning(
+                        "⚠ Use drip irrigation"
+                    )
 
-                    st.write("🌱 Heat Resistant Crops:")
-                    st.write("- Jowar")
-                    st.write("- Bajra")
-                    st.write("- Ragi")
+                    st.info(
+                        "🌱 Grow heat-resistant crops"
+                    )
 
                 else:
 
-                    st.success("✅ Suitable weather for farming")
+                    st.success(
+                        "✅ Suitable Weather for Farming"
+                    )
+
+                # ================= WEATHER SUMMARY =================
 
                 st.subheader("📋 Weather Summary")
 
-                weather_df = {
+                weather_df = pd.DataFrame({
+
                     "Parameter": [
                         "Temperature",
                         "Humidity",
@@ -418,30 +414,45 @@ Protect crops and avoid fertilizer spraying.
                         f"{pressure} hPa",
                         f"{rainfall} mm"
                     ]
-                }
-
-                df = pd.DataFrame(weather_df)
+                })
 
                 st.dataframe(
-                    df,
+                    weather_df,
                     use_container_width=True
                 )
 
-                # ================= SEND ALERT BUTTON =================
+                # ================= ALERT MESSAGE =================
 
-                if st.button("📨 Send Weather Alert"):
+                alert_message = f"""
+🌾 Dhara Sampada Weather Alert
+
+City: {city}
+
+Temperature: {temperature}°C
+Humidity: {humidity}%
+Condition: {weather_condition}
+Wind Speed: {wind_speed} m/s
+Pressure: {pressure} hPa
+Rainfall: {rainfall} mm
+
+Stay Safe & Plan Farming Accordingly.
+"""
+
+                # ================= SEND ALERT =================
+
+                if st.button("📨 Send SMS & Gmail Alert"):
 
                     sms_sent = False
                     email_sent = False
 
-                    if phone_number != "+91":
+                    if phone_number.strip() != "+91":
 
                         sms_sent = send_sms_alert(
                             alert_message,
                             phone_number
                         )
 
-                    if email != "":
+                    if email.strip() != "":
 
                         email_sent = send_email_alert(
                             "Dhara Sampada Weather Alert",
@@ -457,7 +468,9 @@ Protect crops and avoid fertilizer spraying.
 
             else:
 
-                st.error("❌ Unable to Fetch Weather Data")
+                st.error(
+                    "❌ Unable to Fetch Weather Data"
+                )
 
     # ================= WEATHER ALERTS =================
 
@@ -465,15 +478,22 @@ Protect crops and avoid fertilizer spraying.
 
         st.title("🚨 Smart Weather Alerts")
 
-        rainfall = st.slider("Rainfall Level", 0, 100)
+        rainfall = st.slider(
+            "Rainfall Level",
+            0,
+            100
+        )
 
         if rainfall > 70:
+
             st.error("⚠ Heavy Rain Alert")
 
         elif rainfall > 40:
+
             st.warning("⚠ Moderate Rainfall Expected")
 
         else:
+
             st.success("✅ Weather Safe")
 
     # ================= CROP ADVISORY =================
@@ -492,71 +512,82 @@ Protect crops and avoid fertilizer spraying.
             ["Low", "Moderate", "High"]
         )
 
-        season = st.selectbox(
-            "Season",
-            ["Summer", "Winter", "Monsoon"]
-        )
-
         if st.button("Recommend Crops"):
 
-            crops = []
+            if soil == "Black":
 
-            if soil == "Black" and water == "Low":
-                crops = ["Jowar", "Ragi", "Tur Dal"]
+                crops = ["Jowar", "Ragi"]
 
             elif soil == "Red":
+
                 crops = ["Groundnut", "Cotton"]
 
             else:
-                crops = ["Sugarcane", "Pomegranate"]
+
+                crops = ["Sugarcane"]
 
             st.success("🌱 Recommended Crops")
 
             for crop in crops:
+
                 st.write(f"✅ {crop}")
 
     # ================= MARKET PRICES =================
 
     elif menu == "📈 Market Prices":
 
-        st.title("📈 Live Market Price Dashboard")
+        st.title("📈 Market Prices")
 
-        data = {
-            "Crop": ["Jowar", "Ragi", "Cotton", "Tur Dal"],
-            "Price": [3200, 4500, 7600, 8900]
-        }
+        df = pd.DataFrame({
 
-        df = pd.DataFrame(data)
+            "Crop": [
+                "Jowar",
+                "Ragi",
+                "Cotton"
+            ],
 
-        st.dataframe(df, use_container_width=True)
+            "Price": [
+                3200,
+                4500,
+                7600
+            ]
+        })
 
-        st.bar_chart(df.set_index("Crop"))
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
+
+        st.bar_chart(
+            df.set_index("Crop")
+        )
 
     # ================= GOVERNMENT SCHEMES =================
 
     elif menu == "🏛 Government Schemes":
 
-        st.title("🏛 Government Schemes Awareness")
+        st.title("🏛 Government Schemes")
 
-        schemes = {
-            "PM-KISAN": "₹6000 Support Per Year",
-            "KUSUM": "Solar Pump Subsidy",
-            "PMEGP": "Business Loan Support",
-            "NABARD": "Agriculture Funding"
-        }
+        st.info("✅ PM-KISAN → ₹6000 Support")
 
-        for scheme, details in schemes.items():
-            st.info(f"✅ {scheme} → {details}")
+        st.info("✅ KUSUM → Solar Subsidy")
+
+        st.info("✅ NABARD → Agriculture Funding")
 
     # ================= MARKETPLACE =================
 
     elif menu == "🛒 Farmer Marketplace":
 
-        st.title("🛒 Farmer to Buyer Connectivity")
+        st.title("🛒 Farmer Marketplace")
 
         farmer = st.text_input("Farmer Name")
+
         product = st.text_input("Product Name")
-        quantity = st.number_input("Quantity", min_value=1)
+
+        quantity = st.number_input(
+            "Quantity",
+            min_value=1
+        )
 
         if st.button("Add Product"):
 
@@ -568,42 +599,66 @@ Protect crops and avoid fertilizer spraying.
 
     elif menu == "🌱 Soil Health":
 
-        st.title("🌱 Advanced Soil Analysis")
+        st.title("🌱 Soil Health")
 
-        st.info("Analyze soil nutrients and get smart crop & fertilizer recommendations.")
+        ph = st.slider(
+            "🧪 Soil pH",
+            1.0,
+            14.0,
+            7.0
+        )
 
-        ph = st.slider("🧪 Soil pH", 1.0, 14.0, 7.0)
+        if ph < 6:
 
-        nitrogen = st.slider("🌿 Nitrogen (N)", 0, 100, 50)
+            st.warning("⚠ Soil is Acidic")
 
-        phosphorus = st.slider("🧬 Phosphorus (P)", 0, 100, 50)
+        elif ph > 8:
 
-        potassium = st.slider("⚡ Potassium (K)", 0, 100, 50)
+            st.warning("⚠ Soil is Alkaline")
 
-        moisture = st.slider("💧 Soil Moisture (%)", 0, 100, 50)
+        else:
 
-        if st.button("🔍 Analyze Soil"):
-
-            st.success("✅ Soil Analysis Completed")
+            st.success("✅ Soil Health is Good")
 
     # ================= FARM CALCULATOR =================
 
     elif menu == "🚜 Farm Calculator":
 
-        st.title("🚜 Farm Expense Calculator")
+        st.title("🚜 Farm Calculator")
 
-        seeds = st.number_input("Seed Cost", 0)
-        fertilizer = st.number_input("Fertilizer Cost", 0)
-        labor = st.number_input("Labor Cost", 0)
-        income = st.number_input("Expected Income", 0)
+        seeds = st.number_input(
+            "Seed Cost",
+            0
+        )
+
+        fertilizer = st.number_input(
+            "Fertilizer Cost",
+            0
+        )
+
+        labor = st.number_input(
+            "Labor Cost",
+            0
+        )
+
+        income = st.number_input(
+            "Expected Income",
+            0
+        )
 
         if st.button("Calculate Profit"):
 
             expense = seeds + fertilizer + labor
+
             profit = income - expense
 
-            st.success(f"💰 Total Expense: ₹{expense}")
-            st.success(f"📈 Estimated Profit: ₹{profit}")
+            st.success(
+                f"💰 Total Expense: ₹{expense}"
+            )
+
+            st.success(
+                f"📈 Estimated Profit: ₹{profit}"
+            )
 
     # ================= FARMING TIPS =================
 
@@ -612,14 +667,18 @@ Protect crops and avoid fertilizer spraying.
         st.title("📚 Daily Farming Tips")
 
         tips = [
-            "🌱 Use drip irrigation to save water",
-            "🌾 Rotate crops for better soil fertility",
-            "🐄 Organic manure improves yield",
-            "☀ Monitor weather before irrigation",
-            "🚜 Test soil before sowing"
+
+            "🌱 Use drip irrigation",
+
+            "🌾 Rotate crops",
+
+            "🐄 Use organic manure",
+
+            "☀ Monitor weather before irrigation"
         ]
 
         for tip in tips:
+
             st.success(tip)
 
     # ================= MULTILINGUAL =================
@@ -629,25 +688,36 @@ Protect crops and avoid fertilizer spraying.
         st.title("🌐 Multilingual Support")
 
         language = st.selectbox(
+
             "Choose Language",
+
             ["English", "Kannada", "Hindi"]
         )
 
         if language == "Kannada":
 
-            st.success("🌾 ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ")
+            st.success(
+                "🌾 ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ"
+            )
 
         elif language == "Hindi":
 
-            st.success("🌾 धारा संपदा में आपका स्वागत है")
+            st.success(
+                "🌾 धारा संपदा में आपका स्वागत है"
+            )
 
         else:
 
-            st.success("🌾 Welcome to Dhara Sampada")
+            st.success(
+                "🌾 Welcome to Dhara Sampada"
+            )
 
 # ================= APP CONTROL =================
 
 if st.session_state.logged_in:
+
     main_app()
+
 else:
+
     auth_page()
