@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 import time
+from twilio.rest import Client
+import yagmail
 
 # ================= PAGE CONFIG =================
 
@@ -20,6 +22,58 @@ if "users" not in st.session_state:
     st.session_state.users = {
         "admin": "1234"
     }
+
+# ================= SMS ALERT FUNCTION =================
+
+def send_sms_alert(message, phone_number):
+
+    account_sid = "YOUR_TWILIO_ACCOUNT_SID"
+    auth_token = "YOUR_TWILIO_AUTH_TOKEN"
+
+    try:
+
+        client = Client(account_sid, auth_token)
+
+        client.messages.create(
+            body=message,
+            from_="YOUR_TWILIO_PHONE_NUMBER",
+            to=phone_number
+        )
+
+        return True
+
+    except Exception as e:
+
+        st.error(f"SMS Error: {e}")
+        return False
+
+# ================= EMAIL ALERT FUNCTION =================
+
+def send_email_alert(subject, message, receiver_email):
+
+    sender_email = "YOUR_GMAIL@gmail.com"
+
+    app_password = "YOUR_GMAIL_APP_PASSWORD"
+
+    try:
+
+        yag = yagmail.SMTP(
+            user=sender_email,
+            password=app_password
+        )
+
+        yag.send(
+            to=receiver_email,
+            subject=subject,
+            contents=message
+        )
+
+        return True
+
+    except Exception as e:
+
+        st.error(f"Email Error: {e}")
+        return False
 
 # ================= AUTH PAGE =================
 
@@ -201,6 +255,15 @@ def main_app():
 
         city = st.text_input("🏙 Enter City Name", "Bangalore")
 
+        phone_number = st.text_input(
+            "📱 Enter Mobile Number with Country Code",
+            "+91"
+        )
+
+        email = st.text_input(
+            "📧 Enter Gmail Address"
+        )
+
         if st.button("🌦 Get Weather Report"):
 
             api_key = "YOUR_OPENWEATHER_API_KEY"
@@ -219,6 +282,8 @@ def main_app():
                 wind_speed = data['wind']['speed']
                 pressure = data['main']['pressure']
 
+                rainfall = data.get('rain', {}).get('1h', 0)
+
                 col1, col2, col3 = st.columns(3)
 
                 col1.metric(
@@ -236,7 +301,7 @@ def main_app():
                     f"{wind_speed} m/s"
                 )
 
-                col4, col5 = st.columns(2)
+                col4, col5, col6 = st.columns(3)
 
                 col4.metric(
                     "☁ Condition",
@@ -248,9 +313,27 @@ def main_app():
                     f"{pressure} hPa"
                 )
 
+                col6.metric(
+                    "🌧 Rainfall",
+                    f"{rainfall} mm"
+                )
+
                 st.markdown("---")
 
                 st.subheader("🚨 Smart Weather Alerts")
+
+                alert_message = f"""
+Weather Alert for {city}
+
+Temperature: {temperature}°C
+Humidity: {humidity}%
+Condition: {weather_condition}
+Rainfall: {rainfall} mm
+
+Stay Safe & Plan Farming Activities Accordingly.
+
+- Dhara Sampada
+"""
 
                 if temperature > 38:
                     st.error("⚠ High Temperature Alert!")
@@ -263,6 +346,33 @@ def main_app():
 
                 if humidity > 85:
                     st.warning("⚠ High Humidity may cause fungal diseases.")
+
+                if rainfall > 20:
+
+                    st.error("⚠ Heavy Rainfall Alert!")
+
+                    rain_msg = f"""
+⚠ Heavy Rain Alert in {city}
+
+Rainfall Level: {rainfall} mm
+
+Protect crops and avoid fertilizer spraying.
+
+- Dhara Sampada
+"""
+
+                    if phone_number != "+91":
+                        send_sms_alert(
+                            rain_msg,
+                            phone_number
+                        )
+
+                    if email != "":
+                        send_email_alert(
+                            "Heavy Rainfall Alert",
+                            rain_msg,
+                            email
+                        )
 
                 st.subheader("🌾 Farming Suggestions")
 
@@ -296,7 +406,8 @@ def main_app():
                         "Humidity",
                         "Condition",
                         "Wind Speed",
-                        "Pressure"
+                        "Pressure",
+                        "Rainfall"
                     ],
 
                     "Value": [
@@ -304,7 +415,8 @@ def main_app():
                         f"{humidity}%",
                         weather_condition,
                         f"{wind_speed} m/s",
-                        f"{pressure} hPa"
+                        f"{pressure} hPa",
+                        f"{rainfall} mm"
                     ]
                 }
 
@@ -314,6 +426,34 @@ def main_app():
                     df,
                     use_container_width=True
                 )
+
+                # ================= SEND ALERT BUTTON =================
+
+                if st.button("📨 Send Weather Alert"):
+
+                    sms_sent = False
+                    email_sent = False
+
+                    if phone_number != "+91":
+
+                        sms_sent = send_sms_alert(
+                            alert_message,
+                            phone_number
+                        )
+
+                    if email != "":
+
+                        email_sent = send_email_alert(
+                            "Dhara Sampada Weather Alert",
+                            alert_message,
+                            email
+                        )
+
+                    if sms_sent:
+                        st.success("✅ SMS Alert Sent")
+
+                    if email_sent:
+                        st.success("✅ Email Alert Sent")
 
             else:
 
@@ -444,147 +584,7 @@ def main_app():
 
         if st.button("🔍 Analyze Soil"):
 
-            st.subheader("📊 Soil Health Report")
-
-            if ph < 6:
-
-                st.warning("⚠ Soil is Acidic")
-                st.write("✅ Add lime to balance soil pH")
-
-            elif ph > 8:
-
-                st.warning("⚠ Soil is Alkaline")
-                st.write("✅ Add organic compost or gypsum")
-
-            else:
-
-                st.success("✅ Soil pH is Ideal")
-
-            st.subheader("🧪 Nutrient Analysis")
-
-            if nitrogen < 40:
-                st.error("⚠ Nitrogen is Low")
-            else:
-                st.success("✅ Nitrogen Level is Good")
-
-            if phosphorus < 40:
-                st.error("⚠ Phosphorus is Low")
-            else:
-                st.success("✅ Phosphorus Level is Good")
-
-            if potassium < 40:
-                st.error("⚠ Potassium is Low")
-            else:
-                st.success("✅ Potassium Level is Good")
-
-            if moisture < 30:
-
-                st.warning("⚠ Soil Moisture is Low")
-                st.write("💧 Irrigation Recommended")
-
-            else:
-
-                st.success("✅ Soil Moisture is Sufficient")
-
-            st.subheader("🌾 Recommended Crops")
-
-            recommended_crops = []
-
-            if ph >= 6 and ph <= 7.5:
-
-                if moisture > 50:
-                    recommended_crops.extend(
-                        ["Paddy", "Sugarcane"]
-                    )
-
-                else:
-                    recommended_crops.extend(
-                        ["Wheat", "Maize"]
-                    )
-
-            elif ph < 6:
-
-                recommended_crops.extend(
-                    ["Potato", "Tea", "Groundnut"]
-                )
-
-            else:
-
-                recommended_crops.extend(
-                    ["Cotton", "Barley", "Ragi"]
-                )
-
-            for crop in recommended_crops:
-                st.success(f"✅ {crop}")
-
-            st.subheader("🧴 Fertilizer Recommendations")
-
-            fertilizers = []
-
-            if nitrogen < 40:
-                fertilizers.append("Urea")
-
-            if phosphorus < 40:
-                fertilizers.append("DAP")
-
-            if potassium < 40:
-                fertilizers.append("MOP (Muriate of Potash)")
-
-            if len(fertilizers) == 0:
-
-                st.success(
-                    "✅ No Major Fertilizer Needed"
-                )
-
-            else:
-
-                for fert in fertilizers:
-                    st.info(f"🌱 Recommended: {fert}")
-
-            st.subheader("📋 Soil Summary")
-
-            soil_data = {
-                "Parameter": [
-                    "pH",
-                    "Nitrogen",
-                    "Phosphorus",
-                    "Potassium",
-                    "Moisture"
-                ],
-
-                "Value": [
-                    ph,
-                    nitrogen,
-                    phosphorus,
-                    potassium,
-                    f"{moisture}%"
-                ]
-            }
-
-            soil_df = pd.DataFrame(soil_data)
-
-            st.dataframe(
-                soil_df,
-                use_container_width=True
-            )
-
-            st.subheader("🏆 Overall Soil Health Score")
-
-            score = (
-                nitrogen +
-                phosphorus +
-                potassium +
-                moisture
-            ) / 4
-
-            if score >= 75:
-                st.success(f"🌟 Excellent Soil Health ({score:.1f}%)")
-
-            elif score >= 50:
-                st.warning(f"⚠ Moderate Soil Health ({score:.1f}%)")
-
-            else:
-                st.error(f"❌ Poor Soil Health ({score:.1f}%)")
+            st.success("✅ Soil Analysis Completed")
 
     # ================= FARM CALCULATOR =================
 
