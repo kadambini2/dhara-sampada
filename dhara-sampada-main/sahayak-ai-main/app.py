@@ -3,7 +3,6 @@
 import streamlit as st
 import pandas as pd
 import time
-from fpdf import FPDF
 
 # ================= PAGE CONFIG =================
 
@@ -212,31 +211,13 @@ def main_app():
                 mime="text/csv"
             )
 
-            # In-Memory PDF Generation (Fixes multi-step download buttons)
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", "B", 16)
-            pdf.cell(200, 10, "DHARA SAMPADA AGRI-REPORT", ln=True, align="C")
-            pdf.ln(10)
-            pdf.set_font("Arial", size=11)
-
-            for idx, row in df.iterrows():
-                text = (
-                    f"Record {idx+1} -> Survey No: {row['Survey No']} | "
-                    f"Owner: {row['Owner']} | Area: {row['Area']} Acres | "
-                    f"Village: {row['Village']}"
-                )
-                pdf.multi_cell(0, 8, text)
-                
-            # Render directly to string/bytes output stream safely 
-            pdf_bytes = pdf.output(dest='S').encode('latin-1')
-
-            st.download_button(
-                label="📄 Download Compiled PDF Report",
-                data=pdf_bytes,
-                file_name="Dhara_Sampada_Report.pdf",
-                mime="application/pdf"
-            )
+            st.markdown("---")
+            st.subheader("🖨️ Print or Save Report as PDF")
+            st.info("💡 Tip: Click the button below, then set your destination to **'Save as PDF'** in your browser's print window.")
+            
+            # Simple, native browser printing method that requires no third-party package dependencies!
+            if st.button("🖨️ Open System Print Dialog"):
+                st.components.v1.html("<script>window.print();</script>", height=0, width=0)
 
     # ================= NOTIFICATIONS =================
     elif menu == "🔔 Notifications":
