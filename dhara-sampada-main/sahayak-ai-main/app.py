@@ -1,7 +1,9 @@
+# ================= IMPORTS =================
+
 import streamlit as st
-import requests
 import pandas as pd
 import time
+from fpdf import FPDF
 
 # ================= PAGE CONFIG =================
 
@@ -11,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= SESSION =================
+# ================= SESSION STATE INIT =================
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -21,638 +23,298 @@ if "users" not in st.session_state:
         "admin": "1234"
     }
 
-# ================= AUTH PAGE =================
+if "lands" not in st.session_state:
+    st.session_state.lands = []
+
+# ================= AUTHENTICATION PAGE =================
 
 def auth_page():
+    st.title("🌾 DHARA SAMPADA")
+    st.subheader("AI Powered Smart Agriculture Platform")
 
-    st.markdown(
-        """
-        <h1 style='text-align:center;color:green;'>
-        🌾 DHARA SAMPADA
-        </h1>
+    option = st.radio("Select Action", ["🔐 Login", "📝 Sign Up"])
 
-        <h3 style='text-align:center;'>
-        AI Powered Smart Agriculture Platform
-        </h3>
-        """,
-        unsafe_allow_html=True
-    )
+    # ---------- LOGIN ----------
+    if option == "🔐 Login":
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
 
-    st.image(
-        "https://images.unsplash.com/photo-1500937386664-56d1dfef3854",
-        use_container_width=True
-    )
-
-    st.markdown("---")
-
-    auth_option = st.radio(
-        "Select Option",
-        ["🔐 Login", "📝 Sign Up"]
-    )
-
-    # ================= LOGIN =================
-
-    if auth_option == "🔐 Login":
-
-        username = st.text_input("👤 Username")
-        password = st.text_input("🔒 Password", type="password")
-
-        if st.button("🚀 Login"):
-
+        if st.button("Login"):
             if username in st.session_state.users:
-
                 if st.session_state.users[username] == password:
-
                     st.session_state.logged_in = True
-                    st.success("✅ Login Successful")
-
-                    time.sleep(1)
-
+                    st.success("Login Successful!")
+                    time.sleep(0.5)
                     st.rerun()
-
                 else:
-                    st.error("❌ Incorrect Password")
-
+                    st.error("Incorrect Password")
             else:
-                st.error("❌ User Not Found")
+                st.error("User Not Found")
 
-    # ================= SIGNUP =================
-
+    # ---------- SIGNUP ----------
     else:
+        username = st.text_input("Create Username")
+        password = st.text_input("Create Password", type="password")
+        confirm = st.text_input("Confirm Password", type="password")
 
-        st.subheader("📝 Create New Account")
-
-        new_user = st.text_input("👤 Create Username")
-
-        new_pass = st.text_input(
-            "🔒 Create Password",
-            type="password"
-        )
-
-        confirm_pass = st.text_input(
-            "🔒 Confirm Password",
-            type="password"
-        )
-
-        if st.button("✅ Sign Up"):
-
-            if new_user == "" or new_pass == "":
-
-                st.warning("⚠ Please Fill All Fields")
-
-            elif new_user in st.session_state.users:
-
-                st.error("❌ Username Already Exists")
-
-            elif new_pass != confirm_pass:
-
-                st.error("❌ Passwords Do Not Match")
-
+        if st.button("Sign Up"):
+            if not username:
+                st.error("Username cannot be empty")
+            elif password != confirm:
+                st.error("Passwords do not match")
+            elif username in st.session_state.users:
+                st.error("Username already exists")
             else:
+                st.session_state.users[username] = password
+                st.success("Account Created Successfully! Please switch to Login.")
 
-                st.session_state.users[new_user] = new_pass
-
-                st.success(
-                    "✅ Account Created Successfully"
-                )
-
-                st.info(
-                    "Now Login Using Your Credentials"
-                )
-
-# ================= MAIN APP =================
+# ================= MAIN APPLICATION =================
 
 def main_app():
-
-    # ================= SIDEBAR =================
-
     st.sidebar.title("🌾 Dhara Sampada")
-
-    st.sidebar.success("✅ Logged In")
-
+    
     if st.sidebar.button("🚪 Logout"):
-
         st.session_state.logged_in = False
         st.rerun()
 
     menu = st.sidebar.radio(
-        "📌 Navigation",
+        "Navigation",
         [
             "🏠 Dashboard",
             "🌦 Weather Forecast",
             "🌾 Smart Crop Advisory",
             "📈 Market Prices",
+            "🌱 Soil Health",
+            "📑 Land Records",
+            "📊 Reports",
+            "🔔 Notifications",
             "🏛 Government Schemes",
             "🛒 Farmer Marketplace",
             "🚜 Farm Calculator",
-            "🌱 Soil Health",
-            "🚨 Weather Alerts",
             "📚 Farming Tips",
-            "🌐 Multilingual"
+            "🌐 Multilingual",
+            "👤 Profile"
         ]
     )
 
     # ================= DASHBOARD =================
-
     if menu == "🏠 Dashboard":
-
         st.title("🌾 Dhara Sampada Dashboard")
-
-        col1, col2, col3, col4 = st.columns(4)
-
-        col1.metric("👨‍🌾 Farmers", "12,500+")
-        col2.metric("🌾 Crops", "150+")
-        col3.metric("📈 Market Accuracy", "96%")
-        col4.metric("🌦 Weather Alerts", "24/7")
-
-        st.markdown("---")
-
-        st.subheader("🌟 Smart Agriculture Services")
-
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            st.success("🌦 Live Weather Forecast")
-            st.success("🌾 AI Crop Recommendation")
-            st.success("🚨 Disaster Alerts")
-
-        with c2:
-            st.success("📈 Market Price Tracking")
-            st.success("🛒 Farmer Marketplace")
-            st.success("🏛 Government Schemes")
-
-        with c3:
-            st.success("🌱 Soil Health Analysis")
-            st.success("🚜 Farm Expense Calculator")
-            st.success("🌐 Multilingual Support")
-
-        st.image(
-            "https://images.unsplash.com/photo-1464226184884-fa280b87c399",
-            use_container_width=True
-        )
+        
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("👨‍🌾 Registered Farmers", "12,500+")
+        c2.metric("🌾 Tracked Land Records", len(st.session_state.lands))
+        c3.metric("📈 Model Accuracy", "96%")
+        c4.metric("🌦 System Alerts", "Active (24/7)")
 
     # ================= WEATHER =================
-
     elif menu == "🌦 Weather Forecast":
+        st.title("🌦 Weather Forecast")
+        city = st.text_input("Enter City Name", "Bangalore")
 
-        st.title("🌦 Live Weather Forecast")
+        if st.button("Get Weather"):
+            st.info(f"Displaying mockup weather information for {city}")
+            w_c1, w_c2, w_c3 = st.columns(3)
+            w_c1.metric("Temperature", "30°C")
+            w_c2.metric("Humidity", "65%")
+            w_c3.metric("Condition", "Sunny")
 
-        st.info("Get real-time weather updates, rainfall alerts, humidity, and farming suggestions.")
-
-        city = st.text_input("🏙 Enter City Name", "Bangalore")
-
-        if st.button("🌦 Get Weather Report"):
-
-            api_key = "YOUR_OPENWEATHER_API_KEY"
-
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-
-            response = requests.get(url)
-
-            if response.status_code == 200:
-
-                data = response.json()
-
-                temperature = data['main']['temp']
-                humidity = data['main']['humidity']
-                weather_condition = data['weather'][0]['description']
-                wind_speed = data['wind']['speed']
-                pressure = data['main']['pressure']
-
-                col1, col2, col3 = st.columns(3)
-
-                col1.metric(
-                    "🌡 Temperature",
-                    f"{temperature} °C"
-                )
-
-                col2.metric(
-                    "💧 Humidity",
-                    f"{humidity}%"
-                )
-
-                col3.metric(
-                    "💨 Wind Speed",
-                    f"{wind_speed} m/s"
-                )
-
-                col4, col5 = st.columns(2)
-
-                col4.metric(
-                    "☁ Condition",
-                    weather_condition.title()
-                )
-
-                col5.metric(
-                    "📊 Pressure",
-                    f"{pressure} hPa"
-                )
-
-                st.markdown("---")
-
-                st.subheader("🚨 Smart Weather Alerts")
-
-                if temperature > 38:
-                    st.error("⚠ High Temperature Alert!")
-
-                elif temperature < 15:
-                    st.warning("⚠ Cold Weather Alert!")
-
-                else:
-                    st.success("✅ Weather Conditions are Normal")
-
-                if humidity > 85:
-                    st.warning("⚠ High Humidity may cause fungal diseases.")
-
-                st.subheader("🌾 Farming Suggestions")
-
-                if "rain" in weather_condition.lower():
-
-                    st.success("✅ Good time for sowing crops")
-
-                    st.write("🌱 Recommended Crops:")
-                    st.write("- Paddy")
-                    st.write("- Sugarcane")
-                    st.write("- Cotton")
-
-                elif temperature > 35:
-
-                    st.warning("⚠ Use drip irrigation to save water")
-
-                    st.write("🌱 Heat Resistant Crops:")
-                    st.write("- Jowar")
-                    st.write("- Bajra")
-                    st.write("- Ragi")
-
-                else:
-
-                    st.success("✅ Suitable weather for farming")
-
-                st.subheader("📋 Weather Summary")
-
-                weather_df = {
-                    "Parameter": [
-                        "Temperature",
-                        "Humidity",
-                        "Condition",
-                        "Wind Speed",
-                        "Pressure"
-                    ],
-
-                    "Value": [
-                        f"{temperature} °C",
-                        f"{humidity}%",
-                        weather_condition,
-                        f"{wind_speed} m/s",
-                        f"{pressure} hPa"
-                    ]
-                }
-
-                df = pd.DataFrame(weather_df)
-
-                st.dataframe(
-                    df,
-                    use_container_width=True
-                )
-
-            else:
-
-                st.error("❌ Unable to Fetch Weather Data")
-
-    # ================= WEATHER ALERTS =================
-
-    elif menu == "🚨 Weather Alerts":
-
-        st.title("🚨 Smart Weather Alerts")
-
-        rainfall = st.slider("Rainfall Level", 0, 100)
-
-        if rainfall > 70:
-            st.error("⚠ Heavy Rain Alert")
-
-        elif rainfall > 40:
-            st.warning("⚠ Moderate Rainfall Expected")
-
-        else:
-            st.success("✅ Weather Safe")
-
-    # ================= CROP ADVISORY =================
-
+    # ================= CROP =================
     elif menu == "🌾 Smart Crop Advisory":
-
         st.title("🌾 AI Crop Recommendation")
-
-        soil = st.selectbox(
-            "Select Soil Type",
-            ["Black", "Red", "Alluvial"]
-        )
-
-        water = st.selectbox(
-            "Water Availability",
-            ["Low", "Moderate", "High"]
-        )
-
-        season = st.selectbox(
-            "Season",
-            ["Summer", "Winter", "Monsoon"]
-        )
+        soil = st.selectbox("Select Soil Type", ["Black", "Red", "Alluvial"])
 
         if st.button("Recommend Crops"):
-
-            crops = []
-
-            if soil == "Black" and water == "Low":
-                crops = ["Jowar", "Ragi", "Tur Dal"]
-
+            if soil == "Black":
+                st.success("Recommended: Cotton, Jowar")
             elif soil == "Red":
-                crops = ["Groundnut", "Cotton"]
-
+                st.success("Recommended: Groundnut, Ragi")
             else:
-                crops = ["Sugarcane", "Pomegranate"]
+                st.success("Recommended: Paddy, Sugarcane")
 
-            st.success("🌱 Recommended Crops")
-
-            for crop in crops:
-                st.write(f"✅ {crop}")
-
-    # ================= MARKET PRICES =================
-
+    # ================= MARKET =================
     elif menu == "📈 Market Prices":
-
-        st.title("📈 Live Market Price Dashboard")
-
-        data = {
-            "Crop": ["Jowar", "Ragi", "Cotton", "Tur Dal"],
-            "Price": [3200, 4500, 7600, 8900]
-        }
-
-        df = pd.DataFrame(data)
-
+        st.title("📈 Live Market Prices")
+        
+        df = pd.DataFrame({
+            "Crop": ["Cotton", "Jowar", "Paddy", "Ragi"],
+            "Price (per Quintal)": [7600, 3200, 2400, 4500]
+        })
+        
         st.dataframe(df, use_container_width=True)
-
         st.bar_chart(df.set_index("Crop"))
 
-    # ================= GOVERNMENT SCHEMES =================
+    # ================= SOIL =================
+    elif menu == "🌱 Soil Health":
+        st.title("🌱 Soil Health Analysis")
+        
+        ph = st.slider("pH Value", 1.0, 14.0, 7.0, step=0.1)
+        moisture = st.slider("Moisture %", 0, 100, 50)
 
+        if st.button("Analyze Soil"):
+            if 6.0 <= ph <= 7.5:
+                st.success(f"Healthy Soil (pH: {ph})")
+            else:
+                st.warning(f"Suboptimal Soil Chemistry (pH: {ph}). Optimization required.")
+            st.write(f"Current Moisture Level: **{moisture}%**")
+
+    # ================= LAND RECORDS =================
+    elif menu == "📑 Land Records":
+        st.title("📑 Land Registration Records")
+        
+        survey = st.text_input("Survey Number")
+        owner = st.text_input("Owner Name")
+        area = st.number_input("Area (Acres)", min_value=0.0, step=0.1)
+        village = st.text_input("Village")
+
+        if st.button("Save Land Record"):
+            if survey and owner and village and area > 0:
+                st.session_state.lands.append({
+                    "Survey No": survey,
+                    "Owner": owner,
+                    "Area": area,
+                    "Village": village
+                })
+                st.success("Record Saved Successfully!")
+            else:
+                st.error("Please fill in all details before saving.")
+
+        if st.session_state.lands:
+            st.write("### Registered Plots")
+            st.dataframe(pd.DataFrame(st.session_state.lands), use_container_width=True)
+
+    # ================= REPORTS =================
+    elif menu == "📊 Reports":
+        st.title("📊 Dhara Sampada Insights & Reports")
+
+        if not st.session_state.lands:
+            st.warning("No Land Records available to compile metrics or generate files.")
+        else:
+            df = pd.DataFrame(st.session_state.lands)
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Total Records", len(df))
+            c2.metric("Unique Villages", df["Village"].nunique())
+            c3.metric("Total Covered Area", f"{df['Area'].sum()} Acres")
+
+            st.dataframe(df, use_container_width=True)
+
+            st.subheader("Area Distribution by Village")
+            area_df = df.groupby("Village")["Area"].sum().reset_index()
+            st.bar_chart(area_df.set_index("Village"))
+
+            # CSV Data Export
+            csv_data = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Download Data as CSV",
+                data=csv_data,
+                file_name="Dhara_Sampada_Report.csv",
+                mime="text/csv"
+            )
+
+            # In-Memory PDF Generation (Fixes multi-step download buttons)
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 16)
+            pdf.cell(200, 10, "DHARA SAMPADA AGRI-REPORT", ln=True, align="C")
+            pdf.ln(10)
+            pdf.set_font("Arial", size=11)
+
+            for idx, row in df.iterrows():
+                text = (
+                    f"Record {idx+1} -> Survey No: {row['Survey No']} | "
+                    f"Owner: {row['Owner']} | Area: {row['Area']} Acres | "
+                    f"Village: {row['Village']}"
+                )
+                pdf.multi_cell(0, 8, text)
+                
+            # Render directly to string/bytes output stream safely 
+            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+
+            st.download_button(
+                label="📄 Download Compiled PDF Report",
+                data=pdf_bytes,
+                file_name="Dhara_Sampada_Report.pdf",
+                mime="application/pdf"
+            )
+
+    # ================= NOTIFICATIONS =================
+    elif menu == "🔔 Notifications":
+        st.title("🔔 Real-time Advisories")
+        st.success("🌧️ Heavy Rain Expected over South Peninsula regions within 48 hours.")
+        st.info("💰 PM-KISAN installment funds have been credited to registered accounts.")
+        st.warning("🌾 Cotton Market Alert: Price index decreased marginally by 2.1%.")
+
+    # ================= SCHEMES =================
     elif menu == "🏛 Government Schemes":
-
-        st.title("🏛 Government Schemes Awareness")
-
-        schemes = {
-            "PM-KISAN": "₹6000 Support Per Year",
-            "KUSUM": "Solar Pump Subsidy",
-            "PMEGP": "Business Loan Support",
-            "NABARD": "Agriculture Funding"
-        }
-
-        for scheme, details in schemes.items():
-            st.info(f"✅ {scheme} → {details}")
+        st.title("🏛 Active Agriculture Schemes")
+        st.info("**PM-KISAN:** ₹6,000 yearly income support directly routed to farmers.")
+        st.info("**KUSUM Scheme:** High-subsidy solar power pumps installation processing.")
+        st.info("**NABARD Subsidies:** Institutional low-interest microfinancing for farm infrastructure.")
 
     # ================= MARKETPLACE =================
-
     elif menu == "🛒 Farmer Marketplace":
+        st.title("🛒 B2B Farmer Marketplace")
+        
+        farmer = st.text_input("Farmer/Seller Name")
+        product = st.text_input("Product Name (e.g., Organic Wheat)")
+        quantity = st.number_input("Quantity (Quintals)", min_value=1)
 
-        st.title("🛒 Farmer to Buyer Connectivity")
-
-        farmer = st.text_input("Farmer Name")
-        product = st.text_input("Product Name")
-        quantity = st.number_input("Quantity", min_value=1)
-
-        if st.button("Add Product"):
-
-            st.success(
-                f"✅ {product} Added Successfully"
-            )
-
-    # ================= SOIL HEALTH =================
-
-    elif menu == "🌱 Soil Health":
-
-        st.title("🌱 Advanced Soil Analysis")
-
-        st.info("Analyze soil nutrients and get smart crop & fertilizer recommendations.")
-
-        ph = st.slider("🧪 Soil pH", 1.0, 14.0, 7.0)
-
-        nitrogen = st.slider("🌿 Nitrogen (N)", 0, 100, 50)
-
-        phosphorus = st.slider("🧬 Phosphorus (P)", 0, 100, 50)
-
-        potassium = st.slider("⚡ Potassium (K)", 0, 100, 50)
-
-        moisture = st.slider("💧 Soil Moisture (%)", 0, 100, 50)
-
-        if st.button("🔍 Analyze Soil"):
-
-            st.subheader("📊 Soil Health Report")
-
-            if ph < 6:
-
-                st.warning("⚠ Soil is Acidic")
-                st.write("✅ Add lime to balance soil pH")
-
-            elif ph > 8:
-
-                st.warning("⚠ Soil is Alkaline")
-                st.write("✅ Add organic compost or gypsum")
-
+        if st.button("List Product"):
+            if farmer and product:
+                st.success(f"Success: {quantity} unit(s) of '{product}' listed under {farmer}.")
             else:
+                st.error("Please completely fill listing specifications.")
 
-                st.success("✅ Soil pH is Ideal")
-
-            st.subheader("🧪 Nutrient Analysis")
-
-            if nitrogen < 40:
-                st.error("⚠ Nitrogen is Low")
-            else:
-                st.success("✅ Nitrogen Level is Good")
-
-            if phosphorus < 40:
-                st.error("⚠ Phosphorus is Low")
-            else:
-                st.success("✅ Phosphorus Level is Good")
-
-            if potassium < 40:
-                st.error("⚠ Potassium is Low")
-            else:
-                st.success("✅ Potassium Level is Good")
-
-            if moisture < 30:
-
-                st.warning("⚠ Soil Moisture is Low")
-                st.write("💧 Irrigation Recommended")
-
-            else:
-
-                st.success("✅ Soil Moisture is Sufficient")
-
-            st.subheader("🌾 Recommended Crops")
-
-            recommended_crops = []
-
-            if ph >= 6 and ph <= 7.5:
-
-                if moisture > 50:
-                    recommended_crops.extend(
-                        ["Paddy", "Sugarcane"]
-                    )
-
-                else:
-                    recommended_crops.extend(
-                        ["Wheat", "Maize"]
-                    )
-
-            elif ph < 6:
-
-                recommended_crops.extend(
-                    ["Potato", "Tea", "Groundnut"]
-                )
-
-            else:
-
-                recommended_crops.extend(
-                    ["Cotton", "Barley", "Ragi"]
-                )
-
-            for crop in recommended_crops:
-                st.success(f"✅ {crop}")
-
-            st.subheader("🧴 Fertilizer Recommendations")
-
-            fertilizers = []
-
-            if nitrogen < 40:
-                fertilizers.append("Urea")
-
-            if phosphorus < 40:
-                fertilizers.append("DAP")
-
-            if potassium < 40:
-                fertilizers.append("MOP (Muriate of Potash)")
-
-            if len(fertilizers) == 0:
-
-                st.success(
-                    "✅ No Major Fertilizer Needed"
-                )
-
-            else:
-
-                for fert in fertilizers:
-                    st.info(f"🌱 Recommended: {fert}")
-
-            st.subheader("📋 Soil Summary")
-
-            soil_data = {
-                "Parameter": [
-                    "pH",
-                    "Nitrogen",
-                    "Phosphorus",
-                    "Potassium",
-                    "Moisture"
-                ],
-
-                "Value": [
-                    ph,
-                    nitrogen,
-                    phosphorus,
-                    potassium,
-                    f"{moisture}%"
-                ]
-            }
-
-            soil_df = pd.DataFrame(soil_data)
-
-            st.dataframe(
-                soil_df,
-                use_container_width=True
-            )
-
-            st.subheader("🏆 Overall Soil Health Score")
-
-            score = (
-                nitrogen +
-                phosphorus +
-                potassium +
-                moisture
-            ) / 4
-
-            if score >= 75:
-                st.success(f"🌟 Excellent Soil Health ({score:.1f}%)")
-
-            elif score >= 50:
-                st.warning(f"⚠ Moderate Soil Health ({score:.1f}%)")
-
-            else:
-                st.error(f"❌ Poor Soil Health ({score:.1f}%)")
-
-    # ================= FARM CALCULATOR =================
-
+    # ================= CALCULATOR =================
     elif menu == "🚜 Farm Calculator":
+        st.title("🚜 Budget & Profit Projections")
+        
+        seed = st.number_input("Seed Procurement Cost (₹)", min_value=0)
+        fertilizer = st.number_input("Fertilizers & Nutrients Cost (₹)", min_value=0)
+        labor = st.number_input("Labor Operation Cost (₹)", min_value=0)
+        income = st.number_input("Target Expected Gross Revenue (₹)", min_value=0)
 
-        st.title("🚜 Farm Expense Calculator")
-
-        seeds = st.number_input("Seed Cost", 0)
-        fertilizer = st.number_input("Fertilizer Cost", 0)
-        labor = st.number_input("Labor Cost", 0)
-        income = st.number_input("Expected Income", 0)
-
-        if st.button("Calculate Profit"):
-
-            expense = seeds + fertilizer + labor
+        if st.button("Calculate Operating Metrics"):
+            expense = seed + fertilizer + labor
             profit = income - expense
+            
+            st.metric("Total Operational Expense", f"₹{expense}")
+            if profit >= 0:
+                st.metric("Net Projected Profit", f"₹{profit}")
+            else:
+                st.metric("Net Projected Deficit", f"₹{abs(profit)}", delta="-Loss")
 
-            st.success(f"💰 Total Expense: ₹{expense}")
-            st.success(f"📈 Estimated Profit: ₹{profit}")
-
-    # ================= FARMING TIPS =================
-
+    # ================= TIPS =================
     elif menu == "📚 Farming Tips":
+        st.title("📚 Agronomy Practices Best Practices")
+        st.markdown("""
+        * **🌱 Precision Irrigation:** Deploy Drip or Sprinkler systems to conserve up to 40% water.
+        * **🌾 Crop Rotation:** Alternate Legumes with cereals to keep nitrogen-fixation active.
+        * **🚜 Diagnostics:** Test soil composition every 2 seasons to calibrate nutrient feed.
+        """)
 
-        st.title("📚 Daily Farming Tips")
-
-        tips = [
-            "🌱 Use drip irrigation to save water",
-            "🌾 Rotate crops for better soil fertility",
-            "🐄 Organic manure improves yield",
-            "☀ Monitor weather before irrigation",
-            "🚜 Test soil before sowing"
-        ]
-
-        for tip in tips:
-            st.success(tip)
-
-    # ================= MULTILINGUAL =================
-
+    # ================= LANGUAGE =================
     elif menu == "🌐 Multilingual":
+        st.title("🌐 Language Selection / ಭಾಷೆ / भाषा")
+        lang = st.selectbox("Choose Interface Language", ["English", "Kannada", "Hindi"])
 
-        st.title("🌐 Multilingual Support")
-
-        language = st.selectbox(
-            "Choose Language",
-            ["English", "Kannada", "Hindi"]
-        )
-
-        if language == "Kannada":
-
-            st.success("🌾 ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ")
-
-        elif language == "Hindi":
-
-            st.success("🌾 धारा संपदा में आपका स्वागत है")
-
+        if lang == "Kannada":
+            st.success("ಧಾರಾ ಸಂಪದಕ್ಕೆ ಸ್ವಾಗತ — ಉತ್ತಮ ಕೃಷಿ ನಿರ್ವಹಣೆ ವ್ಯವಸ್ಥೆ.")
+        elif lang == "Hindi":
+            st.success("धारा संपदा में आपका स्वागत है — उन्नत कृषि प्रबंधन मंच।")
         else:
+            st.success("Welcome to Dhara Sampada — Smart Farm Optimization Platform.")
 
-            st.success("🌾 Welcome to Dhara Sampada")
+    # ================= PROFILE =================
+    elif menu == "👤 Profile":
+        st.title("👤 User Profile Details")
+        st.text("Status     : Active Verified User")
+        st.text("Access Tier: Core Member Application")
 
-# ================= APP CONTROL =================
+# ================= CORE APP CONTROLLER =================
 
 if st.session_state.logged_in:
     main_app()
 else:
-    auth_page() 
-    
-
-            
-
-       
+    auth_page()
