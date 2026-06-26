@@ -43,7 +43,7 @@ st.markdown("""
         font-weight: bold;
     }
     </style>
-""", unsafe_index=True)
+""", unsafe_allow_html=True)
 
 # ================= SESSION STATE INIT =================
 
@@ -56,15 +56,15 @@ if "users" not in st.session_state:
 if "lands" not in st.session_state:
     # Adding mock data initially for a vibrant UI/UX on first load
     st.session_state.lands = [
-        {"Survey No": "SRV-201", "Owner": "Ramesh Kumar", "Area": 4.5, "Village": "Malur", "Soil": "Black"},
-        {"Survey No": "SRV-404", "Owner": "Suresh Gowda", "Area": 2.2, "Village": "Channapatna", "Soil": "Red"}
+        {"Survey No": "SRV-201", "Owner": "Ramesh Kumar", "Area": 4.5, "Village": "Malur"},
+        {"Survey No": "SRV-404", "Owner": "Suresh Gowda", "Area": 2.2, "Village": "Channapatna"}
     ]
 
 # ================= AUTHENTICATION PAGE =================
 
 def auth_page():
-    st.markdown("<h1 style='text-align: center; color: #2e7d32;'>🌾 DHARA SAMPADA</h1>", unsafe_html=True)
-    st.markdown("<p style='text-align: center; font-size:1.2rem; color: #555;'>Next-Generation AI Precision Agriculture Platform</p>", unsafe_html=True)
+    st.markdown("<h1 style='text-align: center; color: #2e7d32;'>🌾 DHARA SAMPADA</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size:1.2rem; color: #555;'>Next-Generation AI Precision Agriculture Platform</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     col1, col2, col3 = st.columns([1, 1.5, 1])
@@ -108,8 +108,8 @@ def auth_page():
 
 def main_app():
     # Sidebar Navigation Styling
-    st.sidebar.markdown("<h2 style='color: #2e7d32; padding-bottom: 0;'>🌾 Dhara Sampada</h2>", unsafe_html=True)
-    st.sidebar.markdown("<p style='font-size: 0.85rem; color: #777;'>Precision Operating Matrix</p>", unsafe_html=True)
+    st.sidebar.markdown("<h2 style='color: #2e7d32; padding-bottom: 0;'>🌾 Dhara Sampada</h2>", unsafe_allow_html=True)
+    st.sidebar.markdown("<p style='font-size: 0.85rem; color: #777;'>Precision Operating Matrix</p>", unsafe_allow_html=True)
     
     if st.sidebar.button("🚪 Terminate Session", use_container_width=True):
         st.session_state.logged_in = False
@@ -148,13 +148,13 @@ def main_app():
         # Custom Premium Metric Cards Layout
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            st.markdown("<div class='metric-card'><h5>👨‍🌾 Active Grid Ecosystem</h5><h2>12,500+</h2><span style='color:green;'>↑ 4.2% MoM</span></div>", unsafe_html=True)
+            st.markdown("<div class='metric-card'><h5>👨‍🌾 Active Grid Ecosystem</h5><h2>12,500+</h2><span style='color:green;'>↑ 4.2% MoM</span></div>", unsafe_allow_html=True)
         with c2:
-            st.markdown(f"<div class='metric-card'><h5>📑 Ledgered Land Plots</h5><h2>{len(st.session_state.lands)} Plots</h2><span>Verified State Records</span></div>", unsafe_html=True)
+            st.markdown(f"<div class='metric-card'><h5>📑 Ledgered Land Plots</h5><h2>{len(st.session_state.lands)} Plots</h2><span>Verified State Records</span></div>", unsafe_allow_html=True)
         with c3:
-            st.markdown("<div class='metric-card'><h5>📈 Machine Inference</h5><h2>96.4%</h2><span style='color:green;'>Model Optimized</span></div>", unsafe_html=True)
+            st.markdown("<div class='metric-card'><h5>📈 Machine Inference</h5><h2>96.4%</h2><span style='color:green;'>Model Optimized</span></div>", unsafe_allow_html=True)
         with c4:
-            st.markdown("<div class='metric-card'><h5>🌦 Active System Alerts</h5><h2>3 Alerts</h2><span style='color:red;'>Action Required</span></div>", unsafe_html=True)
+            st.markdown("<div class='metric-card'><h5>🌦 Active System Alerts</h5><h2>3 Alerts</h2><span style='color:red;'>Action Required</span></div>", unsafe_allow_html=True)
 
         # Main Layout Columns
         col_left, col_right = st.columns([2, 1])
@@ -171,7 +171,7 @@ def main_app():
             st.warning("**Weather Alert:** Unseasonal downpour detected via satellite paths near Southern Hub.")
             st.info("**Subsidy Window:** KUSUM Solar infrastructure window closing in 4 days.")
 
-    # ================= NEW FEATURE: SATELLITE CROP MONITOR =================
+    # ================= SATELLITE CROP MONITOR =================
     elif menu == "🛰️ Satellite Crop Monitor":
         st.title("🛰️ Satellite Remote Sensing Analytics (Simulated NDVI)")
         st.markdown("Visualizing Normalized Difference Vegetation Index trends to identify field stress anomalies early.")
@@ -196,7 +196,7 @@ def main_app():
                 * **0.5 - 1.0:** Highly Dense, Healthy Crop Canopy 🌱
             """)
 
-    # ================= NEW FEATURE: AI PEST DIAGNOSTIC =================
+    # ================= AI PEST DIAGNOSTIC =================
     elif menu == "🪲 AI Pest Diagnostic":
         st.title("🪲 AI Phytosanitary Pest & Disease Diagnostic Suite")
         st.markdown("Identify vector infestations and plant pathogen symptoms systematically.")
@@ -218,7 +218,7 @@ def main_app():
                 else:
                     st.success("✅ Pathogen profile safe. Maintain routine prophylactic spray scheduling.")
 
-    # ================= NEW FEATURE: PRECISION IRRIGATION =================
+    # ================= PRECISION IRRIGATION =================
     elif menu == "💧 Precision Irrigation":
         st.title("💧 Smart Hydro-Scheduling Matrix")
         st.markdown("Avoid root-rot and unnecessary pumping utility overhead costs.")
@@ -232,7 +232,6 @@ def main_app():
             soil_moist = st.slider("Current Soil Moisture Sensor Value (%)", 0, 100, 35)
 
         if st.button("Compute Precise Volumetric Irrigation Load"):
-            # Mock agronomic equation output
             base_water = {"Paddy/Rice": 45, "Cotton": 20, "Sugarcane": 60, "Millets/Ragi": 10}
             calc_need = max(0, (base_water[crop_type] + (ambient_temp * 0.5)) - soil_moist)
             
@@ -324,7 +323,6 @@ def main_app():
             df = pd.DataFrame(st.session_state.lands)
             st.dataframe(df, use_container_width=True)
 
-            # Native, zero-dependency data print capability
             csv_data = df.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="⬇️ Export Raw Data Asset (.CSV)",
