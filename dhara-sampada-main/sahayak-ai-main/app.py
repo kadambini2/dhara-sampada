@@ -8,7 +8,7 @@ import time
 # ================= PAGE CONFIG =================
 
 st.set_page_config(
-    page_title="Dryland agriculuture | Next-Gen AI Agri-Platform",
+    page_title="Dryland Agriculture | Next-Gen AI Agri-Platform",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -18,12 +18,12 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
     
     /* Core Base Typography Reset */
     html, body, [class*="css"], .stApp {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #F9FBFAF;
+        background-color: #F9FBF9;
     }
     
     /* Beautiful Interactive Glassmorphism Cards */
@@ -95,7 +95,7 @@ if "lands" not in st.session_state:
 def auth_page():
     st.markdown("<div style='margin-top: 6%;'></div>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align: center; color: #1B5E20; font-weight:800; font-size:3.2rem; letter-spacing:-1.5px;'>🌾 DHARA SAMPADA</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size:1.2rem; color: #555E55; margin-bottom: 2.5rem;'>Next-Generation AI Precision Agriculture Platform</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size:1.2rem; color: #555E55; margin-bottom: 2.5rem;'>Next-Generation AI Precision Agriculture Platform for Dryland Farming</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
@@ -132,7 +132,7 @@ def auth_page():
 def main_app():
     # Structural Sidebar Navigation Design
     st.sidebar.markdown("<h2 style='color: #1B5E20; font-weight:800; margin-bottom:2px;'>🌾 Dhara Sampada</h2>", unsafe_allow_html=True)
-    st.sidebar.markdown("<p style='font-size: 0.75rem; color: #788278; text-transform: uppercase; letter-spacing:1px; font-weight:600;'>AI Field Operating Core v3.0</p>", unsafe_allow_html=True)
+    st.sidebar.markdown("<p style='font-size: 0.75rem; color: #788278; text-transform: uppercase; letter-spacing:1px; font-weight:600;'>AI Dryland Operating Core v3.0</p>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
     
     menu = st.sidebar.radio(
@@ -164,7 +164,7 @@ def main_app():
                 <span class='badge-status' style='background: rgba(255,255,255,0.2); color: white; margin-bottom: 12px;'>Core Server Online</span>
                 <h1 style='color: white; font-weight: 800; margin: 0; font-size: 2.5rem; letter-spacing: -0.5px;'>Welcome to Dhara Sampada Control</h1>
                 <p style='color: #E8F5E9; font-size: 1.1rem; margin-top: 8px; margin-bottom: 0; font-weight: 400;'>
-                    Harnessing deep computer vision and macro-sensing matrices to maximize agricultural resource efficiency.
+                    Harnessing deep computer vision and macro-sensing matrices to maximize resource efficiency in arid and dryland agriculture zones.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -197,7 +197,6 @@ def main_app():
                 if uploaded_soil_img is not None:
                     st.image(uploaded_soil_img, caption="📍 Target Topsoil Sample Frame Bound Successfully", use_container_width=True)
                 else:
-                    # Beautiful custom placeholder style area inside container box
                     st.markdown("""
                         <div style='border: 2px dashed #CCD5CC; border-radius:16px; padding: 40px 20px; text-align:center; background-color:#FAFBFA; margin-top:10px;'>
                             <span style='font-size:2.5rem;'>📸</span>
@@ -230,7 +229,7 @@ def main_app():
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
-                        st.info("💡 **Digital Agronomist Verdict:** Soil structural data points demonstrate fine particle binding and normal retention limits. Incorporating 4-5 quintals of biological compost layer over the next processing rotation cycle is highly optimal.")
+                        st.info("💡 **Digital Agronomist Verdict:** Soil data states fine particle binding. For arid plots, introducing balanced biological compost or vermicompost will improve moisture-holding horizons dramatically over sub-optimal heat waves.")
                 else:
                     st.markdown("""
                         <div style='background-color:#F5F7F5; padding:20px; border-radius:14px; color:#5A655A; font-size:0.9rem; border: 1px solid #E6EAE6;'>
@@ -255,6 +254,62 @@ def main_app():
             st.checkbox("Leaf Yellowing/Necrotic spotting vectors spotted")
             if st.button("Run Diagnostic Match Matrix", type="primary"):
                 st.error("💥 Trace alert match calculated: Potential early stage Fungal Rust signature present.")
+
+    # ================= DRYLAND FUNCTIONAL SUBSYSTEMS =================
+    elif menu == "💧 Precision Irrigation":
+        st.markdown("<h1 style='color:#1B5E20; font-weight:700;'>💧 Dryland Water Budgeting & Precision Irrigation</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#636D63;'>Predictive moisture depletion models tailored specifically for arid and semi-arid cultivation maps.</p>", unsafe_allow_html=True)
+        
+        with st.container(border=True):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                crop_type = st.selectbox("Current Dryland Crop", ["Ragi (Finger Millet)", "Jowar (Sorghum)", "Toor (Pigeon Pea)", "Groundnut"])
+                soil_type = st.selectbox("Soil Texture Profile", ["Red Sandy Loam", "Black Cotton Soil", "Shallow Gravelly Soil"])
+            with col_b:
+                days_since_rain = st.number_input("Days Since Last Rainfall Event", min_value=0, max_value=60, value=12)
+                mulching = st.radio("Organic Mulching Applied?", ["Yes", "No"], horizontal=True)
+
+            st.write("")
+            if st.button("📊 Calculate Moisture Depletion & Deficit", type="primary", use_container_width=True):
+                with st.spinner("Simulating localized evapotranspiration matrices..."):
+                    time.sleep(1.0)
+                
+                base_depletion = min(days_since_rain * 3.5, 90.0)
+                if mulching == "Yes":
+                    base_depletion *= 0.7  # Evaporation mitigation factor
+                
+                available_moisture = 100.0 - base_depletion
+                
+                st.subheader("Water Stress Telemetry Results")
+                st.progress(available_moisture / 100.0, text=f"Estimated Available Soil Moisture Profile: {available_moisture:.1f}%")
+                
+                if available_moisture < 40.0:
+                    st.error(f"⚠️ Critical Stress Level! Soil moisture is below the Management Allowed Depletion (MAD) threshold for {crop_type}. Deploy 20mm protective pulse irrigation from farm pond structures immediately if available.")
+                else:
+                    st.success(f"✅ Moisture metrics reside within standard dryland survival boundaries. Next structural verification recommended in 4 days.")
+
+    elif menu == "🌾 Smart Crop Advisory":
+        st.markdown("<h1 style='color:#1B5E20; font-weight:700;'>🌾 AI Dryland Crop & Variety Advisory</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#636D63;'>Get tailored drought-resilient crop combination configurations based on dynamic monsoon delay behaviors.</p>", unsafe_allow_html=True)
+        
+        with st.container(border=True):
+            monsoon_status = st.select_slider(
+                "Current Kharif Monsoon Delay Status",
+                options=["Normal Onset", "2 Weeks Delayed", "4 Weeks Delayed (Critical)", "Severe Drought/Failure"]
+            )
+            
+            st.write("")
+            if st.button("✨ Generate Resilient Contingency Plan", type="primary"):
+                st.markdown("### 📋 AI Strategic Contingency Layout")
+                
+                if monsoon_status == "Normal Onset":
+                    st.info("💡 **Recommendation:** Standard long-duration crops optimal. Plant Toor (BRG-1, BRG-2) or Groundnut (TMV-2) intercropped with Ragi in a 4:2 layout matrix.")
+                elif monsoon_status == "2 Weeks Delayed":
+                    st.warning("💡 **Recommendation:** Swift modification to medium-duration drought-tolerant strains. Opt for Ragi (GPU-28 / GPU-66) or Sorghum (SVD-1). Implement rigorous compartmental bunding.")
+                elif monsoon_status == "4 Weeks Delayed (Critical)":
+                    st.error("💡 **Recommendation:** Avoid long-duration cycles. Transition immediately to contingency assets: Horsegram (PHG-9), Foxtail Millet (Navane), or Matki. Row spacing metrics must expand by 20% to maximize moisture footprint allocation.")
+                else:
+                    st.error("🚨 **Emergency Advisory:** Extreme moisture deficit zone. Halt primary grain tillage. Shift focus entirely to structural fodder processing (Sorghum/Maize fodder) to guarantee livestock asset protection.")
 
     else:
         st.markdown(f"<h1 style='color:#1B5E20; font-weight:700;'>{menu}</h1>", unsafe_allow_html=True)
